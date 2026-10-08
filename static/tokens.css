@@ -1,0 +1,47 @@
+/* Visual tokens (specification document 09 §7). Rules use these names, never literal values. */
+:root {
+  color-scheme: light dark;
+  --surface: #ffffff;
+  --surface-raised: #f6f7f9;
+  --surface-sunken: #eceef2;
+  --surface-inverse: #1c2028;
+  --border: #c6cbd3;
+  --text: #1c2028;
+  --text-muted: #565e6b;
+  --text-inverse: #f4f5f7;
+  --accent: #1a66d6;
+  --accent-tint: #e8f0fc;
+  --primary: #1a5fc4;
+  --danger: #b3261e;
+  --success: #1c6e3c;
+  --warning: #8a5300;
+  --warning-tint: #fff4dc;
+  --font-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --size-base: 14px;
+  --size-small: 12px;
+  --size-smallest: 11px;
+  --control-height: 32px;
+  --radius-control: 4px;
+  --radius-row: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #171a20;
+    --surface-raised: #20242c;
+    --surface-sunken: #2a2f39;
+    --surface-inverse: #0d0f13;
+    --border: #454c59;
+    --text: #eceef2;
+    --text-muted: #a9b1be;
+    --text-inverse: #f4f5f7;
+    --accent: #7fb0ff;
+    --accent-tint: #1d2b44;
+    --primary: #2f6fd0;
+    --danger: #ff8a80;
+    --success: #6fd49a;
+    --warning: #f0b75a;
+    --warning-tint: #3a2e14;
+  }
+}

@@ -1,0 +1,7 @@
+specs/
+.DS_Store
+.DS_store
+node_modules/
+dist/
+dist-e2e/
+test-results/

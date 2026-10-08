@@ -1,0 +1,32 @@
+{
+  "name": "@intl-tms/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Extension: edit a website's translations directly on the rendered page. A Host of @intl-tms/core.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:e2e": "node scripts/build.mjs --e2e",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "node scripts/build.mjs --e2e && playwright test",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
+  },
+  "dependencies": {
+    "@intl-tms/core": "link:../core"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "@types/chrome": "^0.1.0",
+    "@types/node": "^26.6.4",
+    "esbuild": "^0.25.0",
+    "eslint": "^10.12.0",
+    "jsdom": "^29.1.1",
+    "typescript": "5.9",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  }
+}
