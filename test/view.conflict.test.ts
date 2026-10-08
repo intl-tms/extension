@@ -58,7 +58,7 @@ describe("panel view: a Write conflict", () => {
     const view = opened(
       {
         config: SCHEMA,
-        answer: () => {
+        answer: (): PersistOutcome => {
           if (!first) return { ok: true, results: {} };
           first = false;
           return { ok: false, results: { en: { ok: false, status: 409, failure: "conflict", current: { value: "Deploy now", status: "approved" } } } };

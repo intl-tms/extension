@@ -1,0 +1,93 @@
+html {
+  font: var(--size-base) / 1.4 var(--font-ui);
+  color: var(--text);
+  background: var(--surface);
+}
+
+body {
+  margin: 0;
+  padding: 12px;
+  width: 220px;
+  box-sizing: border-box;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: var(--size-base);
+  font-weight: 600;
+}
+
+[data-role="site"] {
+  margin: 0 0 10px;
+  min-height: 1.4em;
+  color: var(--text-muted);
+  font-size: var(--size-small);
+  overflow-wrap: anywhere;
+}
+
+.switch {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.switch button {
+  flex: 1;
+  height: var(--control-height);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.switch button:first-child {
+  border-radius: var(--radius-control) 0 0 var(--radius-control);
+}
+
+.switch button:last-child {
+  border-left: 0;
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+}
+
+.switch button[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-inverse);
+  font-weight: 600;
+}
+
+.switch button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-size: var(--size-small);
+}
+
+input {
+  width: 100%;
+  height: var(--control-height);
+  box-sizing: border-box;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+  font: var(--size-small) var(--font-ui);
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.hint {
+  margin: 8px 0 0;
+  color: var(--danger);
+  font-size: var(--size-small);
+}
