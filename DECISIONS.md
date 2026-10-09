@@ -101,6 +101,11 @@ was chosen and why.
 
 ## Page Host (M4, M5)
 
+- **Editing is an Alt-click (Option on a Mac); a plain click is the page's.**
+  The Core's highlighter owns the rule and the reasons (see its decisions).
+  The Extension only words it: the panel's placeholder, the diagnostics hint
+  and the Editor's guide. The content script still runs at `document_idle`,
+  so a page that captures at the window before then hears an edit press first.
 - **Cookies and the tab's session storage are ports** in addition to the ones
   the specification lists, because "cookies are blocked" and "already
   reloaded" must be testable without a browser.

@@ -1,8 +1,8 @@
 # Intl TMS — the Extension
 
 A Chrome extension for editing a website's translations directly on the page.
-Switch it on for a website, click any outlined text, edit it in every language
-in the side panel, and save. Nothing is deployed and no other visitor sees
+Switch it on for a website, hold Alt and click any outlined text, edit it in
+every language in the side panel, and save. Nothing is deployed and no other visitor sees
 anything.
 
 It is a Host of [`@intl-tms/core`](../core): the Core owns the editing logic,
@@ -45,28 +45,32 @@ The page reloads once, and every piece of translated text gets an outline.
 
 ### Edit and save
 
-1. Click any outlined text. The side panel opens beside the page with that text
-   in every language. The language the page is showing is marked **on this
-   page**.
+1. Hold **Alt** (**Option** on a Mac) and click any outlined text. The side
+   panel opens beside the page with that text in every language. The language
+   the page is showing is marked **on this page**.
 2. Change what you want, in as many languages as you want.
 3. Click **Save all**. The line under the buttons shows a tick for each
    language that was saved, and the page shows the new text.
 
 Things worth knowing:
 
+- A click without Alt is an ordinary click: links, buttons and menus work as
+  they always do, so you can move around the website with edit mode on. While
+  Alt is held the outlines thicken to show what a click will edit.
+- Alt-click a drop-down list to choose which of its options to edit.
 - **Cancel** puts everything back to what was loaded.
 - If a text contains tags such as `<b>…</b>`, keep them. The panel tells you
   which tag is wrong and will not save until it matches.
 - Some text needs the website to rebuild the page before it can be shown
   (anything with tags or placeholders). The page reloads by itself after such
-  a save. Click the text again before saving it a second time.
+  a save. Alt-click the text again before saving it a second time.
 - If someone else changed the same text while you had it open, nothing is
   overwritten. The panel says **changed elsewhere**, shows what is stored now,
   and keeps what you typed. Click **Save all** again to keep yours, or
   **Cancel** to take theirs.
 - A **Shared** badge means the text may appear in more than one place.
-- Clicking another text does not throw away what you typed for the first one:
-  it is there again when you click that text.
+- Alt-clicking another text does not throw away what you typed for the first
+  one: it is there again when you Alt-click that text.
 
 ### Text you cannot see
 
@@ -131,7 +135,7 @@ bottom of the panel (it opens by itself when something fails).
 
 1. The Config URL is wrong or the website is down: the page's console has
    `failed to fetch the editing configuration` with the reason.
-2. You are signed out of the website. Sign in and click the text again.
+2. You are signed out of the website. Sign in and Alt-click the text again.
 
 ### Save shows ✗
 
@@ -139,9 +143,9 @@ Open **Diagnostics**. The line after `FAILED` says which:
 
 | It says | What to do |
 | --- | --- |
-| `The page did not answer…` | Reload the page, click the text again, and save. |
-| `The page no longer holds this translation. Click the text again.` | The page reloaded or changed since you clicked. Click the text again; what you typed is still in the panel. |
-| `No translation is selected…` | Click an outlined text on the page first. |
+| `The page did not answer…` | Reload the page, Alt-click the text again, and save. |
+| `The page no longer holds this translation. Click the text again.` | The page reloaded or changed since you clicked. Alt-click the text again; what you typed is still in the panel. |
+| `No translation is selected…` | Alt-click an outlined text on the page first. |
 | `The configuration never loaded…` | Check the Config URL in the popup. |
 | `da: 401` or `da: 403` | You are not signed in, or may not edit. Sign in to the website. |
 | `da: 400 …` | The website refused the text; the reason follows the number. |

@@ -17,7 +17,13 @@ export interface Fixture {
   close(): Promise<void>;
 }
 
-const DEFAULTS = { hero: { title: "Deploy now" }, rich: { text: "Read the <b>docs</b>" }, icon: { close: "Close" } };
+const DEFAULTS = {
+  hero: { title: "Deploy now" },
+  rich: { text: "Read the <b>docs</b>" },
+  icon: { close: "Close" },
+  nav: { docs: "Docs" },
+  lang: { en: "English", da: "Dansk" },
+};
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 /** The website's formatter: text is escaped, and `<b>` is the one tag it has a handler for. */
@@ -66,6 +72,8 @@ export async function startFixture(options: { alwaysMarked?: boolean } = {}): Pr
     <h1 id="title">${format(t.hero.title)}</h1>
     <p id="rich">${format(t.rich.text)}</p>
     <p id="plain">Not a translation</p>
+    <a id="link" href="#docs">${format(t.nav.docs)}</a>
+    <select id="lang"><option value="en">${format(t.lang.en)}</option><option value="da">${format(t.lang.da)}</option></select>
   </body>
 </html>`);
     })().catch((error: unknown) => {

@@ -13,7 +13,7 @@ export const TOGGLE = TOGGLE_COOKIE_NAME;
 
 export const mark = (text: string, key: string) => encode(text, key);
 export const byId = (id: string) => document.getElementById(id)!;
-export const click = (target: Element) => target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+export const click = (target: Element) => target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, altKey: true }));
 
 /** Lets promise chains and immediates run. Timers are faked, so nothing sleeps. */
 export async function settle(): Promise<void> {

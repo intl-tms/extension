@@ -27,7 +27,7 @@ export const POPUP = {
 
 /** Side Panel. */
 export const PANEL = {
-  placeholder: "Click a highlighted translation on the page to edit it.",
+  placeholder: "Hold Alt (Option on a Mac) and click a highlighted translation on the page to edit it.",
   sharedBadge: "Shared",
   currentLocale: "on this page",
   searchPlaceholder: "Search locale or value…",
@@ -59,7 +59,7 @@ export const DIAGNOSTICS = {
   clear: "Clear",
   copied: "Copied",
   copyFailed: "Copy failed",
-  empty: "Nothing logged yet. Click a translation and press Save.",
+  empty: "Nothing logged yet. Alt-click a translation and press Save.",
   config: (languages: readonly string[], sourceLocale: string | undefined, hasSchema: boolean) =>
     `languages: ${languages.length > 0 ? list(languages) : "(none)"}; source: ${sourceLocale ?? "(unset)"}; schema: ${hasSchema ? "yes" : "no"}`,
   open: (key: string, locale: string) => `${key} (${locale})`,

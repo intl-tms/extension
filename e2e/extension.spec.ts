@@ -86,8 +86,38 @@ test("EE4 no Page Host is present in the tab of a second Site that was never swi
   await second.close();
 });
 
-test("EE5 clicking the outlined string shows its key in the panel", async () => {
-  await page.locator("#title").click();
+test("an Alt-click on an outlined link edits it and does not follow it", async () => {
+  await page.locator("#link").click({ modifiers: ["Alt"] });
+  await expect(panel.locator('[data-role="key"]')).toHaveText("nav.docs");
+  expect(new URL(page.url()).hash).toBe("");
+});
+
+test("a plain click on the same link follows it", async () => {
+  await page.locator("#link").click();
+  expect(new URL(page.url()).hash).toBe("#docs");
+});
+
+// Whether the browser's own list is open cannot be seen from the page. Focus can, and both are
+// the default of the same press: a select that did not take focus did not open either.
+test("an Alt-click on a drop-down offers its options to edit, and the press never reaches the control", async () => {
+  await page.locator("#lang").click({ modifiers: ["Alt"] });
+  await expect(page.locator("[data-tms-picker-row]")).toHaveText(["textEnglish", "textDansk"]);
+  await expect(page.locator("#lang:focus")).toHaveCount(0);
+});
+
+test("choosing an option there shows its key in the panel", async () => {
+  await page.locator("[data-tms-picker-row]").nth(1).click();
+  await expect(panel.locator('[data-role="key"]')).toHaveText("lang.da");
+});
+
+test("a plain click on the drop-down is the page's: the control takes it", async () => {
+  await page.locator("#lang").click();
+  await expect(page.locator("#lang:focus")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+});
+
+test("EE5 Alt-clicking the outlined string shows its key in the panel", async () => {
+  await page.locator("#title").click({ modifiers: ["Alt"] });
   await expect(panel.locator('[data-role="key"]')).toHaveText("hero.title");
 });
 
@@ -151,7 +181,7 @@ test("EE15 editing and saving it shows the new value in its row", async () => {
 });
 
 test("EE16 a save after another Editor changed the same key says it changed elsewhere", async () => {
-  await page.locator("#title").click();
+  await page.locator("#title").click({ modifiers: ["Alt"] });
   await expect(control("en")).toHaveValue("Deploy tonight");
   await site.write("hero.title", "Ship it");
   await editAndSave("Deploy at dawn");
@@ -177,7 +207,7 @@ test("EE20 pressing Save again stores this Editor's value", async () => {
 });
 
 test("EE21–EE22 a value with a tag reloads the page, which shows it rendered, and the panel reports success", async () => {
-  await page.locator("#rich").click();
+  await page.locator("#rich").click({ modifiers: ["Alt"] });
   await expect(control("en")).toHaveValue("Read the <b>docs</b>");
   const reloaded = page.waitForEvent("load");
   await editAndSave("Read the <b>manual</b>");
