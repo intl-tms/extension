@@ -5,7 +5,7 @@
 //   node scripts/build.mjs --watch    rebuild bundles and re-copy static files on change
 //   node scripts/build.mjs --e2e      test build into dist-e2e/ (see below)
 import { context } from "esbuild";
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { watch } from "node:fs";
 
 const flags = new Set(process.argv.slice(2));
@@ -27,8 +27,9 @@ async function copyStatic() {
   await writeFile(manifestUrl, JSON.stringify(manifest, null, 2));
 }
 
-await rm(out, { recursive: true, force: true });
+// Clear the output but keep releases/, where `pnpm package` leaves its zips.
 await mkdir(out, { recursive: true });
+for (const entry of await readdir(out)) if (entry !== "releases") await rm(new URL(entry, out), { recursive: true, force: true });
 
 const bundles = await context({
   entryPoints: {
