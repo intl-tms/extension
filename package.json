@@ -4,7 +4,7 @@
   "private": true,
   "description": "The Extension: edit a website's translations directly on the rendered page. A Host of @intl-tms/core.",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "build": "node scripts/build.mjs",
     "package": "bash scripts/package.sh",

@@ -1,11 +1,20 @@
 # Intl TMS — the Extension
 
+> [!WARNING]
+> **Under active development. Do not use in production.**
+> Intl TMS has no built-in authentication: a website decides who may edit only
+> through the `authorize` function its developers write. Use the Extension on
+> local and test websites only.
+
+Documentation: <https://intl-tms.github.io/docs/> ·
+Privacy: <https://intl-tms.github.io/docs/privacy>
+
 A Chrome extension for editing a website's translations directly on the page.
 Switch it on for a website, hold Alt and click any outlined text, edit it in
 every language in the side panel, and save. Nothing is deployed and no other visitor sees
 anything.
 
-It is a Host of [`@intl-tms/core`](../core): the Core owns the editing logic,
+It is a Host of [`@intl-tms/core`](https://github.com/intl-tms/core): the Core owns the editing logic,
 and the Extension owns what only a browser extension can do. The specification
 is in `specs/extension-spec/`; choices made while building are in
 [DECISIONS.md](DECISIONS.md).
@@ -211,3 +220,7 @@ the Editor's guide above once against a website that integrates the Core.
 
 Every change to what ships bumps `version` in `static/manifest.json`: Chrome
 keeps running the old Worker and old pages until it sees a new version.
+
+## License
+
+[MIT](./LICENSE)
