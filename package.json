@@ -17,7 +17,7 @@
     "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },
   "dependencies": {
-    "@intl-tms/core": "link:../core"
+    "@intl-tms/core": "^0.2.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.0",
