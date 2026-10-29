@@ -1,4 +1,4 @@
-import { createHandler, createMemoryAdapter, encode, resolveConfig, TOGGLE_COOKIE_NAME, type ConfigInput } from "@intl-tms/core";
+import { createHandler, createMemoryAdapter, encode, resolveConfig, TOGGLE_COOKIE_NAME, type Authorize, type ConfigInput } from "@intl-tms/core";
 import type { RequestFn } from "@intl-tms/core/tools";
 import { vi } from "vitest";
 import { createPageHost, type PageHostOptions } from "../../src/page/page-host.js";
@@ -63,6 +63,8 @@ export interface BootOptions {
   config?: Partial<ConfigInput> | false;
   /** Replaces the website entirely. */
   request?: RequestFn;
+  /** The website's authorization check. Defaults to allowing everyone. */
+  authorize?: Authorize;
   origin?: string;
   host?: Partial<PageHostOptions>;
   /** A reload of an earlier page: the tab's session storage and cookies carry over. */
@@ -80,13 +82,13 @@ export function boot(options: BootOptions = {}) {
 
   const config = resolveConfig({ locales: ["en", "da"], basePath: BASE, sourceLocale: "en", ...(options.config || {}) } as ConfigInput);
   const adapter = createMemoryAdapter();
-  const handler = createHandler({ config, adapter, authorize: () => true, onError: () => undefined });
-  const requests: { url: string; method: string; body?: unknown }[] = [];
+  const handler = createHandler({ config, adapter, authorize: options.authorize ?? (() => true), onError: () => undefined });
+  const requests: { url: string; method: string; body?: unknown; credentials?: RequestCredentials }[] = [];
   /** Per-path overrides: a function answering instead of the website. */
   const overrides: { match: (url: string, method: string) => boolean; answer: RequestFn }[] = [];
   const request: RequestFn = async (url, init) => {
     const method = init?.method ?? "GET";
-    requests.push({ url, method, ...(typeof init?.body === "string" ? { body: JSON.parse(init.body) } : {}) });
+    requests.push({ url, method, ...(typeof init?.body === "string" ? { body: JSON.parse(init.body) } : {}), ...(init?.credentials === undefined ? {} : { credentials: init.credentials }) });
     const override = overrides.find((candidate) => candidate.match(url, method));
     if (override) return override.answer(url, init);
     if (options.request) return options.request(url, init);

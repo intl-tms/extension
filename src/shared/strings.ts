@@ -25,6 +25,15 @@ export const POPUP = {
   hintAddressNotWeb: (scheme: string) => `The config URL must start with http:// or https://, not ${scheme}//.`,
 } as const;
 
+/** Signing in: the line the Popup and the Side Panel show when the website refuses. */
+export const SIGN_IN = {
+  notSignedIn: "You are not signed in to this website.",
+  refused: "This website refused the request.",
+  forbidden: "You are signed in, but may not edit translations here. Ask whoever manages your access to this website.",
+  signIn: "Sign in",
+  editingAs: (name: string) => `Editing as ${name}`,
+} as const;
+
 /** Side Panel. */
 export const PANEL = {
   placeholder: "Hold Alt (Option on a Mac) and click a highlighted translation on the page to edit it.",

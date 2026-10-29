@@ -1,6 +1,7 @@
 import { isHttpUrl } from "@intl-tms/core/tools";
 import type { HiddenItem, LocaleWrite } from "@intl-tms/core/tools";
 import type { SchemaDef, Usage, ValuesEnvelope } from "@intl-tms/core";
+import type { SignInStatus } from "./sign-in.js";
 
 /**
  * The message protocol, defined once and imported by every context. The shapes
@@ -44,6 +45,8 @@ export interface PageStatus {
   protocol: "compatible" | "website-newer" | "website-older" | "unknown";
   /** How many translations the last scan found. */
   found?: { text: number; hidden: number };
+  /** Whether the website lets the Editor in. Absent until the website answered. */
+  signIn?: SignInStatus;
 }
 
 /** The reply to panel-ready: the stashed Selection with the tab and Site it belongs to, or nothing. */

@@ -4,12 +4,16 @@ import {
   aggregateUsage,
   createClient,
   createSession,
+  isHelpText,
   isHttpUrl,
+  readHelpText,
+  readSignInDescriptor,
   resolveLocale,
   type Found,
   type RequestFn,
 } from "@intl-tms/core/tools";
 import { dispatch, failedSave, message, parseFor, type ConfigSlice, type Kind, type Message, type PageStatus, type Payloads } from "../shared/protocol.js";
+import type { SignInStatus } from "../shared/sign-in.js";
 import { readSettings } from "../shared/storage.js";
 import { CONFIG_REASONS, CONSOLE } from "../shared/strings.js";
 
@@ -80,7 +84,7 @@ export interface PageHost {
   handleMessage(raw: unknown, reply: (result: unknown) => void): boolean;
 }
 
-type ConfigLoad = { ok: true; config: ResolvedConfig } | { ok: false; reason: string; protocol?: PageStatus["protocol"] };
+type ConfigLoad = { ok: true; config: ResolvedConfig; editor?: string } | { ok: false; reason: string; protocol?: PageStatus["protocol"] };
 
 const textOf = (error: unknown) => (error instanceof Error ? error.message : String(error)).slice(0, ERROR_TEXT_LIMIT);
 
@@ -129,7 +133,7 @@ export function createPageHost(options: PageHostOptions): PageHost {
   const document = options.document ?? globalThis.document;
   const origin = options.origin ?? document.location.origin;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIME_LIMIT_MS;
-  const request: RequestFn = options.request ?? ((url, init) => fetch(url, init));
+  const website: RequestFn = options.request ?? ((url, init) => fetch(url, init));
   const console = options.console ?? globalThis.console;
   const navigation = options.navigation ?? {
     reload: () => document.location.reload(),
@@ -179,6 +183,79 @@ export function createPageHost(options: PageHostOptions): PageHost {
     if (serialised === lastStatus) return;
     lastStatus = serialised;
     send("status-changed", { status });
+  }
+
+  /** What the website last said about letting the Editor in. */
+  let signIn: SignInStatus | undefined;
+  /** The website's session cookie travels to another origin: requests include credentials for the rest of this page load. */
+  let withCredentials = false;
+  /** The configuration must be fetched again on the next application of settings, even from the same address. */
+  let refetch = false;
+  let lastStored: unknown;
+
+  function setSignIn(next: SignInStatus): void {
+    const previous = signIn;
+    signIn = next;
+    report({ signIn: next });
+    // The website marks a page only for a signed-in Editor, so a page loaded
+    // while signed out has nothing to edit, and no draft to lose. A page with
+    // Markers lost its session mid-edit and keeps its draft instead.
+    if (previous?.state === "not-signed-in" && next.state === "accepted" && status?.marked !== true) navigation.reload();
+  }
+
+  /** What a response says about signing in. The body is read from a copy, so the caller still reads it. */
+  async function observe(response: Response): Promise<void> {
+    if (response.ok) {
+      setSignIn(signIn?.state === "accepted" ? signIn : { state: "accepted" });
+      return;
+    }
+    if (response.status !== 401 && response.status !== 403) return;
+    let body: unknown;
+    try {
+      body = JSON.parse(await response.clone().text());
+    } catch {
+      body = undefined;
+    }
+    if (response.status === 401) {
+      const descriptor = readSignInDescriptor(body);
+      setSignIn(descriptor === undefined ? { state: "not-signed-in" } : { state: "not-signed-in", descriptor });
+      return;
+    }
+    // A 403 for a foreign origin is about the request, not about the Editor.
+    if (!isObject(body) || body.code !== "forbidden") return;
+    const help = readHelpText(body.help);
+    setSignIn(help === undefined ? { state: "not-permitted" } : { state: "not-permitted", help });
+  }
+
+  /**
+   * Every request to the website, the configuration included, goes through
+   * here: made from inside the page so the website's own session authorizes
+   * it, and watched for what the answer says about signing in.
+   */
+  const request: RequestFn = async (url, init) => {
+    const attempt = () => website(url, withCredentials ? { ...init, credentials: "include" } : init);
+    let response = await attempt();
+    if (response.status === 401 && !withCredentials) {
+      let body: unknown;
+      try {
+        body = JSON.parse(await response.clone().text());
+      } catch {
+        body = undefined;
+      }
+      if (readSignInDescriptor(body)?.session?.credentials === true) {
+        withCredentials = true;
+        response = await attempt();
+      }
+    }
+    await observe(response);
+    return response;
+  };
+
+  /** After a "not signed in", coming back to the page asks the website again: the Editor may have signed in in another tab. */
+  function onVisibility(): void {
+    if (document.visibilityState !== "visible" || !active || signIn?.state !== "not-signed-in") return;
+    refetch = true;
+    void applySettings(lastStored);
   }
 
   const client = createClient({ getConfig: () => config, request, timeoutMs, ...(options.timers ? { timers: options.timers } : {}) });
@@ -254,7 +331,10 @@ export function createPageHost(options: PageHostOptions): PageHost {
       const served = (parsed as { protocol?: unknown }).protocol;
       if (typeof served === "number" && served > PROTOCOL_VERSION) return { ok: false, reason: CONFIG_REASONS.websiteNewer, protocol: "website-newer" };
       if (typeof served === "number" && served < PROTOCOL_VERSION) return { ok: false, reason: CONFIG_REASONS.websiteOlder, protocol: "website-older" };
-      return { ok: true, config: parsed };
+      // Who the website says the Editor is, shown only: one short line of text or nothing.
+      const access = (parsed as { access?: unknown }).access;
+      const editor = isObject(access) && isHelpText(access.name) ? access.name : undefined;
+      return editor === undefined ? { ok: true, config: parsed } : { ok: true, config: parsed, editor };
     };
     try {
       return await Promise.race([attempt(), limit]);
@@ -293,6 +373,7 @@ export function createPageHost(options: PageHostOptions): PageHost {
     generation++;
     if (!active) return;
     active = false;
+    document.removeEventListener("visibilitychange", onVisibility);
     cookies.write(`${TOGGLE_COOKIE_NAME}=; Path=/; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
     tabSession.remove(RELOAD_GUARD);
     stopSession();
@@ -304,6 +385,7 @@ export function createPageHost(options: PageHostOptions): PageHost {
 
   async function applySettings(stored: unknown): Promise<void> {
     const run = ++generation;
+    lastStored = stored;
     const settings = readSettings(stored);
     if (settings.configUrl === "" || !settings.sites.includes(origin)) {
       switchOff();
@@ -333,13 +415,15 @@ export function createPageHost(options: PageHostOptions): PageHost {
 
     if (!active) {
       active = true;
+      document.addEventListener("visibilitychange", onVisibility);
       tabSession.remove(RELOAD_GUARD);
       // Renewed while edit mode is in use, so a Toggle nobody can clear any more expires on its own.
       cookies.write(toggleCookie());
     }
     report({ gate: "on", toggle: "set" });
 
-    if (config === undefined || configSource !== settings.configUrl) {
+    if (config === undefined || configSource !== settings.configUrl || refetch) {
+      refetch = false;
       report({ config: "loading" });
       const loaded = await loadConfig(settings.configUrl);
       // Settings changed again while this waited: the later application decides.
@@ -348,6 +432,7 @@ export function createPageHost(options: PageHostOptions): PageHost {
         config = loaded.config;
         configSource = settings.configUrl;
         report({ config: "loaded", protocol: "compatible", configReason: undefined });
+        if (loaded.editor !== undefined && signIn?.state === "accepted") setSignIn({ state: "accepted", editor: loaded.editor });
         send("config-loaded", { config: slice(config) });
       } else {
         // The previous configuration, or none, stays in place.
