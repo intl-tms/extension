@@ -388,3 +388,11 @@ h3 {
 [hidden] {
   display: none !important;
 }
+
+.editing-as {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: var(--size-small);
+  overflow-wrap: anywhere;
+}
+

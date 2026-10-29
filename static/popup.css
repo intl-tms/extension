@@ -91,3 +91,13 @@ input:focus-visible {
   color: var(--danger);
   font-size: var(--size-small);
 }
+
+.editing-as {
+  color: var(--text-muted);
+  font-size: var(--size-small);
+}
+
+.editing-as {
+  margin: 10px 0 0;
+  overflow-wrap: anywhere;
+}

@@ -2,9 +2,9 @@
 
 > [!WARNING]
 > **Under active development. Do not use in production.**
-> Intl TMS has no built-in authentication: a website decides who may edit only
-> through the `authorize` function its developers write. Use the Extension on
-> local and test websites only.
+> The Extension holds no credential: a website decides who may edit through
+> its own login for Editors and the `authorize` check its developers build.
+> Use the Extension on local and test websites only.
 
 Documentation: <https://intl-tms.github.io/docs/> ·
 Privacy: <https://intl-tms.github.io/docs/privacy>
@@ -34,7 +34,7 @@ site until you switch it on there.
 
 ### Switch it on
 
-1. Open the website you want to edit and sign in as you normally do.
+1. Open the website you want to edit.
 2. Click the **Intl TMS** icon. The window says `Edit mode on <website>` so you
    can see which website you are switching.
 3. Paste the **Config URL** you were given for that website. It is a full
@@ -51,6 +51,16 @@ page and to save your edits through the website, as you. It is asked once per
 website, and only for that website.
 
 The page reloads once, and every piece of translated text gets an outline.
+
+### Sign in
+
+Websites let only their Editors edit. The extension says nothing about signing
+in and never shows a sign-in address or any text the website sends with a
+refusal. Sign in to the website in an ordinary tab, the way you normally do,
+then come back to the page: it reloads once by itself and is outlined. Signing
+in lasts a working day; after that you are asked again.
+
+While you are signed in, the popup and the panel say `Editing as <your name>`.
 
 ### Edit and save
 
@@ -144,7 +154,9 @@ bottom of the panel (it opens by itself when something fails).
 
 1. The Config URL is wrong or the website is down: the page's console has
    `failed to fetch the editing configuration` with the reason.
-2. You are signed out of the website. Sign in and Alt-click the text again.
+2. You are signed out of the website, or your account may not edit. Nothing
+   outlined appears. Sign in to the website in another tab, come back, and
+   Alt-click the text again.
 
 ### Save shows ✗
 
@@ -156,7 +168,7 @@ Open **Diagnostics**. The line after `FAILED` says which:
 | `The page no longer holds this translation. Click the text again.` | The page reloaded or changed since you clicked. Alt-click the text again; what you typed is still in the panel. |
 | `No translation is selected…` | Alt-click an outlined text on the page first. |
 | `The configuration never loaded…` | Check the Config URL in the popup. |
-| `da: 401` or `da: 403` | You are not signed in, or may not edit. Sign in to the website. |
+| `da: 401` or `da: 403` | You are not signed in, or may not edit. What you typed is kept, so sign in to the website in another tab and save again. |
 | `da: 400 …` | The website refused the text; the reason follows the number. |
 | `da: the request never reached the server…` | The website is unreachable. Check your connection and try again. |
 
@@ -180,7 +192,10 @@ For the extension to work, a website must:
 
 It must never cache a marked response for another visitor, and never treat the
 cookie as authorization: anyone can set a cookie. Protection is the handler's
-`authorize`.
+`authorize`, built with the Core's `sessionCheck` over a login for Editors on
+the same site as the pages. The Extension learns how to sign in from the
+handler's refusal: a `401` or `403` only tells it the Editor is not let in.
+Any sign-in address or help text the website adds is never shown.
 
 ## Development
 
@@ -194,8 +209,8 @@ pnpm watch       # rebuild on change, static files included
 pnpm test:e2e    # builds dist-e2e/ and runs the real-browser suite (first: pnpm exec playwright install chromium)
 ```
 
-The Core is installed from npm as
-[`@intl-tms/core`](https://www.npmjs.com/package/@intl-tms/core) and bundled in.
+The Core must be built first (`../core/dist`), since it is linked, not
+published.
 
 ### Layout
 

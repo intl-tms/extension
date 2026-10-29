@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { PanelSeed } from "../src/shared/protocol.js";
+import type { PageStatus, PanelSeed } from "../src/shared/protocol.js";
+import type { SignInStatus } from "../src/shared/sign-in.js";
 import { STORAGE } from "../src/shared/storage.js";
 import { classifySender } from "../src/worker/relay.js";
 import { SITE_A, SITE_B, memoryStore, noUnhandledRejections, page, panel, world } from "./support/relay.js";
@@ -508,5 +509,38 @@ describe("classifying a sender", () => {
 
   it("another extension's page is not one of ours", () => {
     expect(classifySender({ url: "chrome-extension://zzzz/panel.html" }, EXTENSION).extension).toBe(false);
+  });
+});
+
+describe("relay: the sign-in state", () => {
+  const status = (signIn?: SignInStatus): { status: PageStatus } => ({ status: { site: SITE_A, gate: "on", toggle: "set", config: "loaded", protocol: "compatible", ...(signIn === undefined ? {} : { signIn }) } });
+
+  it("relays a change of the sign-in state to the panel, with its tab", async () => {
+    const w = world();
+    await w.deliver("status-changed", status({ state: "not-signed-in" }), page(7));
+    expect(w.pushedOf("sign-in-changed").map((m) => [m.tab, m.payload.status])).toEqual([[7, { state: "not-signed-in" }]]);
+  });
+
+  it("does not relay a status whose sign-in state did not change", async () => {
+    const w = world();
+    await w.deliver("status-changed", status({ state: "accepted" }), page(7));
+    await w.deliver("status-changed", { status: { ...status({ state: "accepted" }).status, marked: true } }, page(7));
+    expect(w.pushedOf("sign-in-changed")).toHaveLength(1);
+  });
+
+  it("keeps the Editor's name only in the session area, never in durable storage", async () => {
+    const w = world();
+    await w.deliver("config-loaded", { config: { languages: ["en"], schema: null } }, page(7));
+    await w.deliver("status-changed", status({ state: "accepted", editor: "Ada Jensen" }), page(7));
+    expect([JSON.stringify([...w.durable.data]).includes("Ada Jensen"), JSON.stringify([...w.session.data]).includes("Ada Jensen")]).toEqual([false, true]);
+  });
+
+  it("seeds a panel that opens later with the Selection's tab's sign-in state", async () => {
+    const w = world();
+    await w.select(7);
+    await w.deliver("status-changed", status({ state: "accepted", editor: "Ada Jensen" }), page(7));
+    w.pushed.length = 0;
+    await w.deliver("panel-ready", {}, panel);
+    expect(w.pushedOf("sign-in-changed").map((m) => [m.tab, m.payload.status])).toEqual([[7, { state: "accepted", editor: "Ada Jensen" }]]);
   });
 });

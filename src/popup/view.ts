@@ -1,3 +1,4 @@
+import { editingAs, readSignInStatus } from "../shared/sign-in.js";
 import { accessPattern, siteOf } from "../shared/site.js";
 import { STORAGE, readSettings } from "../shared/storage.js";
 import { POPUP, PRODUCT } from "../shared/strings.js";
@@ -24,6 +25,10 @@ export interface PopupPorts {
    * depend on code that runs after this resolves.
    */
   requestAccess(pattern: string): Promise<boolean>;
+  /** The active tab's page status as the Worker stashed it, raw. Untrusted: validated here. */
+  tabStatus(): Promise<unknown>;
+  /** Called with the active tab's page status, raw, whenever the stash changes while the Popup is open. */
+  onTabStatus(listener: (status: unknown) => void): void;
 }
 
 /** What {@link mountPopup} is built from. */
@@ -74,6 +79,18 @@ export async function mountPopup({ container, ports }: PopupOptions): Promise<vo
   hint.className = "hint";
   hint.setAttribute("role", "status");
 
+  // Who is editing, from the page status. Nothing else about signing in is shown.
+  const editingAsLine = document.createElement("p");
+  editingAsLine.dataset.role = "editing-as";
+  editingAsLine.className = "editing-as";
+
+  function showStatus(raw: unknown): void {
+    const status = readSignInStatus((raw as { signIn?: unknown } | undefined)?.signIn);
+    const name = editingAs(status);
+    editingAsLine.textContent = name ?? "";
+    editingAsLine.hidden = name === undefined;
+  }
+
   const facts = (): PopupFacts => ({ site, address: field.value, listed: site !== undefined && sites.includes(site), granted });
 
   function render(): void {
@@ -123,6 +140,13 @@ export async function mountPopup({ container, ports }: PopupOptions): Promise<vo
     render();
   });
 
-  container.replaceChildren(title, siteElement, group, label, field, hint);
+  container.replaceChildren(title, siteElement, group, label, field, hint, editingAsLine);
   render();
+  // The status is a nicety: a Popup that cannot read it still works.
+  showStatus(await Promise.resolve().then(ports.tabStatus).catch(() => undefined));
+  try {
+    ports.onTabStatus(showStatus);
+  } catch {
+    // No updates while open.
+  }
 }

@@ -16,6 +16,7 @@ import {
   type ResolvedFilter,
 } from "@intl-tms/core/tools";
 import type { FieldDef } from "@intl-tms/core";
+import { editingAs } from "../shared/sign-in.js";
 import { DIAGNOSTICS, PANEL, PRODUCT } from "../shared/strings.js";
 import type { PanelCallbacks, PanelDriver } from "./controller.js";
 import { createLog, type Log } from "./log.js";
@@ -116,7 +117,10 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
 
   const header = element("header");
   header.className = "panel-header";
-  header.append(element("h1", undefined, PRODUCT.name));
+  const editingAsLine = element("p", "editing-as");
+  editingAsLine.className = "editing-as";
+  editingAsLine.hidden = true;
+  header.append(element("h1", undefined, PRODUCT.name), editingAsLine);
 
   const editor = element("section", "editor");
   editor.className = "editor";
@@ -610,6 +614,12 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
   // ---------------------------------------------------------------------
 
   return {
+    setSignIn(status) {
+      const name = editingAs(status);
+      editingAsLine.textContent = name ?? "";
+      editingAsLine.hidden = name === undefined;
+    },
+
     open(openedKey, locale, onPageValue) {
       harvest();
       store.open(openedKey, locale, onPageValue);

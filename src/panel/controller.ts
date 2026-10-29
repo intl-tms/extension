@@ -2,6 +2,7 @@ import { isHttpUrl } from "@intl-tms/core/tools";
 import type { HiddenItem, PanelConfig, PanelWrite, PersistOutcome } from "@intl-tms/core/tools";
 import type { Usage, ValuesEnvelope } from "@intl-tms/core";
 import { dispatch, message, parseFor, type Kind, type Message, type Payloads } from "../shared/protocol.js";
+import { readSignInStatus, type SignInStatus } from "../shared/sign-in.js";
 
 /** The panel view's inbound calls, which mirror the Core panel store's one to one. */
 export interface PanelDriver {
@@ -10,6 +11,8 @@ export interface PanelDriver {
   setUsage(key: string, usages: Usage[], error: boolean): void;
   setConfig(config: PanelConfig): void;
   setHidden(items: HiddenItem[]): void;
+  /** What the website last said about letting the Editor in, validated. */
+  setSignIn(status: SignInStatus | undefined): void;
 }
 
 /** What the panel view calls when the Editor acts. */
@@ -96,6 +99,11 @@ export function createController(ports: ControllerPorts): Controller {
           "hidden-changed": ({ payload, tab }) => {
             hiddenTab = tab;
             target.setHidden(payload.items ?? []);
+          },
+          "sign-in-changed": ({ payload, tab }) => {
+            // The panel speaks for the tab whose translation it shows.
+            if (selectionTab !== undefined && tab !== selectionTab) return;
+            target.setSignIn(readSignInStatus(payload.status));
           },
         },
         incoming,

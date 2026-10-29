@@ -17,9 +17,8 @@ was chosen and why.
 ## Tooling (M0)
 
 - **pnpm, TypeScript 5.9 strict with `noUncheckedIndexedAccess`, vitest with
-  jsdom, esbuild, eslint, Playwright.** The Core is consumed from npm
-  (`@intl-tms/core`, at first as a linked `link:../core`) and bundled in; it is
-  the only runtime dependency.
+  jsdom, esbuild, eslint, Playwright.** The Core is consumed as a linked
+  package (`link:../core`) and bundled in; it is the only runtime dependency.
 - **Four bundles are IIFE single files** targeting Chrome 116, minified, with
   source maps. `scripts/build.mjs --watch` rebuilds bundles and re-copies
   static files.
@@ -237,3 +236,39 @@ was chosen and why.
   page, commands, context menu, support bundle, live preview, screenshots,
   header Toggle, split Page Host and budgets, second browser family,
   hostile-page suite and threat model.
+
+## A reason and a way to sign in (XA1)
+
+- **One place sees every answer.** The Page Host wraps the request function it
+  gives the Core's client and uses for the configuration. A `401` sets the
+  sign-in state to *not signed in* with the descriptor, a `403` whose code is
+  `forbidden` to *not permitted*, and any successful answer
+  to *accepted*. A `403` with another code (`forbidden-origin`) is about the
+  request and changes nothing. Bodies are read from a copy.
+- **The state is a member of the page status**, `signIn`, so the Worker
+  stashes it with the rest and the Popup reads it from the stash in the
+  session area. The Popup still sends no message.
+- **The panel gets its own message, `sign-in-changed`,** relayed only when the
+  sign-in part of a status changes, so a busy page's scans do not repaint the
+  panel. Once a Selection is shown, the panel follows only that tab.
+- **The website's help text is never shown.** It can name internal pages or
+  steps, and the Extension displays only its own words. Every receiver
+  validates the state with the Core's `readSignInDescriptor`. The Editor's name is accepted
+  only when it passes the help-text rule (one short line).
+- **Coming back** is the page's `visibilitychange` to visible, while edit mode
+  is on and the state is *not signed in*. The listener is added when edit mode
+  starts on the page and removed when it is switched off.
+- **The reload after signing in** happens on the change from *not signed in*
+  to *accepted* when the last scan found no Markers (or no scan finished). It
+  is tied to the change, not to a page load, so it cannot loop and needs no
+  guard in the tab's session storage.
+- **Credentials.** A `401` whose descriptor asks for credentials is repeated
+  once with `credentials: "include"`, and every later request of the page load
+  includes them.
+- **The panel and the Popup show no sign-in line, button or address.** A
+  refusal can only leak the website's login address or internal wording, so
+  the Extension keeps the state for the reload and "Editing as" and shows
+  nothing else.
+- **End to end**, `e2e/sign-in.spec.ts` runs against a fixture website with a
+  login for Editors. The test browser never hides a background tab, so the
+  test sends the page the `visibilitychange` a real tab switch would.

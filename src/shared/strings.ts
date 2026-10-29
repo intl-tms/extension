@@ -25,6 +25,11 @@ export const POPUP = {
   hintAddressNotWeb: (scheme: string) => `The config URL must start with http:// or https://, not ${scheme}//.`,
 } as const;
 
+/** Signing in: the Popup and the Side Panel say only who is editing. */
+export const SIGN_IN = {
+  editingAs: (name: string) => `Editing as ${name}`,
+} as const;
+
 /** Side Panel. */
 export const PANEL = {
   placeholder: "Hold Alt (Option on a Mac) and click a highlighted translation on the page to edit it.",

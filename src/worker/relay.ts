@@ -304,8 +304,12 @@ export function createRelay(ports: RelayPorts): Relay {
           "status-changed": (changed) => {
             const entry = tabStash(sender);
             if (entry !== undefined) {
+              const before = JSON.stringify(entry.status?.signIn);
               entry.status = changed.payload.status;
               persist();
+              // The panel shows only the sign-in part, so only its changes are relayed.
+              const signIn = changed.payload.status.signIn;
+              if (JSON.stringify(signIn) !== before) push(message("panel", "sign-in-changed", signIn === undefined ? {} : { status: signIn }, { tab: sender.tab, site: sender.site }));
             }
             return false;
           },
@@ -319,6 +323,9 @@ export function createRelay(ports: RelayPorts): Relay {
                 const site = entry?.site ?? hiddenEntry?.site ?? slices.last ?? undefined;
                 const slice = site === undefined ? undefined : slices.sites[site];
                 if (slice !== undefined) push(message("panel", "config-loaded", { config: slice }, { site }));
+                const signInTab = tab ?? stash.hiddenTab;
+                const signIn = signInTab === null ? undefined : stash.tabs[signInTab]?.status?.signIn;
+                if (signInTab !== null && signIn !== undefined) push(message("panel", "sign-in-changed", { status: signIn }, { tab: signInTab, site: stash.tabs[signInTab]?.site }));
                 if (stash.hiddenTab !== null && hiddenEntry?.hidden !== undefined && hiddenEntry.hidden.length > 0) {
                   push(message("panel", "hidden-changed", { items: hiddenEntry.hidden }, { tab: stash.hiddenTab, site: hiddenEntry.site }));
                 }

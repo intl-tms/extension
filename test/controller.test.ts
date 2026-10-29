@@ -16,6 +16,7 @@ function setup(reply: (message: Message) => unknown = () => undefined) {
     setUsage: record("setUsage"),
     setConfig: record("setConfig"),
     setHidden: record("setHidden"),
+    setSignIn: record("setSignIn"),
   };
   const sent: Message[] = [];
   const opened: string[] = [];
@@ -282,5 +283,27 @@ describe("controller: commands", () => {
     const { controller, push } = setup();
     push("selection-opened", { key: "hero.title", locale: "en", value: "x" }, { tab: 7, site: SITE });
     expect(controller.site()).toBe(SITE);
+  });
+});
+
+describe("controller: signing in", () => {
+  it("passes the sign-in state of the Selection's tab to the view", () => {
+    const { calls, push } = setup();
+    push("selection-opened", { key: "hero.title", locale: "en", value: "Deploy now" }, { tab: 7, site: SITE });
+    push("sign-in-changed", { status: { state: "not-signed-in" } }, { tab: 7 });
+    expect(calls.at(-1)).toEqual(["setSignIn", { state: "not-signed-in" }]);
+  });
+
+  it("ignores another tab's state once a Selection is shown", () => {
+    const { calls, push } = setup();
+    push("selection-opened", { key: "hero.title", locale: "en", value: "Deploy now" }, { tab: 7, site: SITE });
+    push("sign-in-changed", { status: { state: "not-signed-in" } }, { tab: 8 });
+    expect(calls.some(([name]) => name === "setSignIn")).toBe(false);
+  });
+
+  it("validates the state: a sign-in address that is not a web address is dropped", () => {
+    const { calls, push } = setup();
+    push("sign-in-changed", { status: { state: "not-signed-in", descriptor: { session: { signIn: "javascript:x" } } } }, { tab: 7 });
+    expect(calls.at(-1)).toEqual(["setSignIn", { state: "not-signed-in", descriptor: {} }]);
   });
 });
