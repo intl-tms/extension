@@ -17,9 +17,8 @@ was chosen and why.
 ## Tooling (M0)
 
 - **pnpm, TypeScript 5.9 strict with `noUncheckedIndexedAccess`, vitest with
-  jsdom, esbuild, eslint, Playwright.** The Core is consumed from npm
-  (`@intl-tms/core`, at first as a linked `link:../core`) and bundled in; it is
-  the only runtime dependency.
+  jsdom, esbuild, eslint, Playwright.** The Core is consumed as a linked
+  package (`link:../core`) and bundled in; it is the only runtime dependency.
 - **Four bundles are IIFE single files** targeting Chrome 116, minified, with
   source maps. `scripts/build.mjs --watch` rebuilds bundles and re-copies
   static files.

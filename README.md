@@ -194,8 +194,8 @@ pnpm watch       # rebuild on change, static files included
 pnpm test:e2e    # builds dist-e2e/ and runs the real-browser suite (first: pnpm exec playwright install chromium)
 ```
 
-The Core is installed from npm as
-[`@intl-tms/core`](https://www.npmjs.com/package/@intl-tms/core) and bundled in.
+The Core must be built first (`../core/dist`), since it is linked, not
+published.
 
 ### Layout
 
