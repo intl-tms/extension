@@ -54,12 +54,12 @@ The page reloads once, and every piece of translated text gets an outline.
 
 ### Sign in
 
-Websites let only their Editors edit, with a login for Editors that your
-organisation's IT department manages. If you are not signed in, the popup and
+Websites let only their Editors edit. If you are not signed in, the popup and
 the side panel say `You are not signed in to this website.` and offer **Sign
 in**, which opens the website's sign-in page in a new tab. Sign in there with
-your work account, then come back to the page: it reloads once by itself and is
-outlined. Signing in lasts a working day; after that you are asked again.
+whatever sign-in method your organisation has set up, then come back to the
+page: it reloads once by itself and is outlined. Signing in lasts a working
+day; after that you are asked again.
 
 `You are signed in, but may not edit translations here.` means your account
 does not have permission to edit. Ask whoever manages your access to this
