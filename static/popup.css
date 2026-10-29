@@ -91,3 +91,35 @@ input:focus-visible {
   color: var(--danger);
   font-size: var(--size-small);
 }
+
+.sign-in {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.sign-in p {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+
+.sign-in .help,
+.editing-as {
+  color: var(--text-muted);
+  font-size: var(--size-small);
+}
+
+.sign-in button {
+  height: var(--control-height);
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.editing-as {
+  margin: 10px 0 0;
+  overflow-wrap: anywhere;
+}

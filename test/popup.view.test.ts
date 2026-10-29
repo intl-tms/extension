@@ -34,6 +34,9 @@ async function popup(setup: Setup = {}) {
       granted = setup.answer ?? true;
       return Promise.resolve(granted);
     },
+    tabStatus: async () => undefined,
+    onTabStatus: () => undefined,
+    openTab: () => undefined,
   };
   const container = document.createElement("div");
   document.body.append(container);
@@ -232,6 +235,11 @@ describe("Popup view", () => {
         writeSettings: () => Promise.resolve(),
         isGranted: () => Promise.reject(new Error("no")),
         requestAccess: () => Promise.resolve(false),
+        tabStatus: () => Promise.reject(new Error("no stash")),
+        onTabStatus: () => {
+          throw new Error("no events");
+        },
+        openTab: () => undefined,
       },
     });
     expect(container.querySelector("[data-role=hint]")?.textContent).toBe(POPUP.hintNoAddress);
