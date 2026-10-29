@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { editingAs, readSignInStatus } from "../src/shared/sign-in.js";
 
 
-const descriptor = { session: { signIn: "https://app.test/editors/sign-in" }, help: "Sign in with your company account." };
+const descriptor = { credentials: true, help: "Sign in with your company account." };
 describe("editing as", () => {
   it("names the Editor the website named", () => {
     expect(editingAs({ state: "accepted", editor: "Ada Jensen" })).toBe("Editing as Ada Jensen");
@@ -26,8 +26,8 @@ describe("reading a stored or relayed sign-in status", () => {
     expect(readSignInStatus(value)).toBeUndefined();
   });
 
-  it("drops a sign-in address that is not a web address", () => {
-    expect(readSignInStatus({ state: "not-signed-in", descriptor: { session: { signIn: "javascript:alert(1)" } } })).toEqual({ state: "not-signed-in", descriptor: {} });
+  it("drops a pairing address that is not a web address", () => {
+    expect(readSignInStatus({ state: "not-signed-in", descriptor: { pair: { address: "javascript:alert(1)" } } })).toEqual({ state: "not-signed-in", descriptor: {} });
   });
 
   it("drops a help text from a stored status", () => {

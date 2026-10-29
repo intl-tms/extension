@@ -30,7 +30,7 @@ async function popup(status: unknown) {
 }
 
 const refused = [
-  { signIn: { state: "not-signed-in", descriptor: { session: { signIn: `${A}/editors/sign-in` }, help: "Use your company account." } } },
+  { signIn: { state: "not-signed-in", descriptor: { credentials: true, help: "Use your company account." } } },
   { signIn: { state: "not-signed-in" } },
   { signIn: { state: "not-permitted", help: "Ask IT for the Editor role." } },
 ];
