@@ -54,16 +54,11 @@ The page reloads once, and every piece of translated text gets an outline.
 
 ### Sign in
 
-Websites let only their Editors edit. If you are not signed in, the popup and
-the side panel say `You are not signed in to this website.` and offer **Sign
-in**, which opens the website's sign-in page in a new tab. Sign in there with
-whatever sign-in method your organisation has set up, then come back to the
-page: it reloads once by itself and is outlined. Signing in lasts a working
-day; after that you are asked again.
-
-`You are signed in, but may not edit translations here.` means your account
-does not have permission to edit. Ask whoever manages your access to this
-website; the line under it may say who.
+Websites let only their Editors edit. The extension says nothing about signing
+in and never shows a sign-in address or any text the website sends with a
+refusal. Sign in to the website in an ordinary tab, the way you normally do,
+then come back to the page: it reloads once by itself and is outlined. Signing
+in lasts a working day; after that you are asked again.
 
 While you are signed in, the popup and the panel say `Editing as <your name>`.
 
@@ -159,8 +154,9 @@ bottom of the panel (it opens by itself when something fails).
 
 1. The Config URL is wrong or the website is down: the page's console has
    `failed to fetch the editing configuration` with the reason.
-2. You are signed out of the website. The panel says so at the top: press
-   **Sign in**, sign in, come back, and Alt-click the text again.
+2. You are signed out of the website, or your account may not edit. Nothing
+   outlined appears. Sign in to the website in another tab, come back, and
+   Alt-click the text again.
 
 ### Save shows ✗
 
@@ -172,7 +168,7 @@ Open **Diagnostics**. The line after `FAILED` says which:
 | `The page no longer holds this translation. Click the text again.` | The page reloaded or changed since you clicked. Alt-click the text again; what you typed is still in the panel. |
 | `No translation is selected…` | Alt-click an outlined text on the page first. |
 | `The configuration never loaded…` | Check the Config URL in the popup. |
-| `da: 401` or `da: 403` | You are not signed in, or may not edit. The line at the top of the panel says which; what you typed is kept, so sign in and save again. |
+| `da: 401` or `da: 403` | You are not signed in, or may not edit. What you typed is kept, so sign in to the website in another tab and save again. |
 | `da: 400 …` | The website refused the text; the reason follows the number. |
 | `da: the request never reached the server…` | The website is unreachable. Check your connection and try again. |
 
@@ -198,8 +194,8 @@ It must never cache a marked response for another visitor, and never treat the
 cookie as authorization: anyone can set a cookie. Protection is the handler's
 `authorize`, built with the Core's `sessionCheck` over a login for Editors on
 the same site as the pages. The Extension learns how to sign in from the
-handler's refusal: a `401` names the sign-in address, which **Sign in** opens,
-and a `403` may carry a help text, shown as plain text.
+handler's refusal: a `401` or `403` only tells it the Editor is not let in.
+Any sign-in address or help text the website adds is never shown.
 
 ## Development
 

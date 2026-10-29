@@ -56,13 +56,13 @@ describe("the sign-in state", () => {
     expect(signIn(page)).toEqual({ state: "not-signed-in", descriptor: {} });
   });
 
-  it("a 403 says the Editor may not edit, with the help text", async () => {
+  it("a 403 says the Editor may not edit, and keeps the help text out of the state", async () => {
     const { state, authorize } = website({ help: { forbidden: "Ask IT for the Editor role." } });
     state.signedIn = true;
     state.editor = false;
     const page = boot({ html: UNMARKED, authorize });
     await page.on();
-    expect(signIn(page)).toEqual({ state: "not-permitted", help: "Ask IT for the Editor role." });
+    expect(signIn(page)).toEqual({ state: "not-permitted" });
   });
 
   it("a 403 for a foreign origin is not about signing in", async () => {

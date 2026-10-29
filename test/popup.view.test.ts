@@ -36,7 +36,6 @@ async function popup(setup: Setup = {}) {
     },
     tabStatus: async () => undefined,
     onTabStatus: () => undefined,
-    openTab: () => undefined,
   };
   const container = document.createElement("div");
   document.body.append(container);
@@ -239,7 +238,6 @@ describe("Popup view", () => {
         onTabStatus: () => {
           throw new Error("no events");
         },
-        openTab: () => undefined,
       },
     });
     expect(container.querySelector("[data-role=hint]")?.textContent).toBe(POPUP.hintNoAddress);

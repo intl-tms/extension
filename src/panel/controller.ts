@@ -25,8 +25,6 @@ export interface PanelCallbacks {
   flash(id: string): void;
   /** Opens a Hidden item for editing, as if it had been clicked on the page. */
   openHidden(id: string): void;
-  /** Opens the website's sign-in address in a new tab. */
-  signIn(url: string): void;
 }
 
 /** What the controller needs from the browser. */
@@ -145,10 +143,6 @@ export function createController(ports: ControllerPorts): Controller {
       },
       flash: (id) => fire("flash", { id }, hiddenTab),
       openHidden: (id) => fire("open-hidden", { id }, hiddenTab),
-      signIn(url) {
-        // Checked immediately before opening. The Extension never fetches it; the browser opens it beside the page, which keeps its draft.
-        if (isHttpUrl(url)) ports.openTab(url);
-      },
     },
 
     site: () => selectionSite,

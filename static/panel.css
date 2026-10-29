@@ -396,20 +396,3 @@ h3 {
   overflow-wrap: anywhere;
 }
 
-.sign-in {
-  margin: 0 0 12px;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface-raised);
-}
-
-.sign-in p {
-  margin: 0 0 6px;
-  overflow-wrap: anywhere;
-}
-
-.sign-in .help {
-  color: var(--text-muted);
-  font-size: var(--size-small);
-}

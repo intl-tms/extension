@@ -306,16 +306,4 @@ describe("controller: signing in", () => {
     push("sign-in-changed", { status: { state: "not-signed-in", descriptor: { session: { signIn: "javascript:x" } } } }, { tab: 7 });
     expect(calls.at(-1)).toEqual(["setSignIn", { state: "not-signed-in", descriptor: {} }]);
   });
-
-  it("Sign in opens the address in a new tab", () => {
-    const { controller, opened } = setup();
-    controller.callbacks.signIn("https://a.example/editors/sign-in");
-    expect(opened).toEqual(["https://a.example/editors/sign-in"]);
-  });
-
-  it("Sign in never opens an address that is not http or https", () => {
-    const { controller, opened } = setup();
-    controller.callbacks.signIn("javascript:alert(1)");
-    expect(opened).toEqual([]);
-  });
 });

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { HELP, startFixture, type Fixture } from "./fixture.js";
+import { startFixture, type Fixture } from "./fixture.js";
 
 // Signing in, in a real browser: a website with a login for Editors that marks its pages only for a
 // signed-in Editor. The same workarounds as the editing suite apply: the Site is granted at
@@ -53,20 +53,11 @@ test.afterAll(async () => {
   await site?.close();
 });
 
-test("SI1 signed out, switching the Site On marks nothing and the panel says the Editor is not signed in", async () => {
+test("SI1 signed out, switching the Site On marks nothing and the panel says nothing about signing in", async () => {
   await store({ sites: [site.origin], configUrl: site.configUrl });
-  await expect(role(panel, "sign-in-line")).toHaveText("You are not signed in to this website.");
-  await expect(role(panel, "sign-in-help")).toHaveText(HELP.unauthenticated);
+  await expect(role(panel, "sign-in-line")).toHaveCount(0);
+  await expect(role(panel, "sign-in-button")).toHaveCount(0);
   await expect(outlined()).toHaveCount(0);
-});
-
-test("SI2 Sign in opens the website's sign-in page in a new tab", async () => {
-  const opened = context.waitForEvent("page");
-  await role(panel, "sign-in-button").click();
-  const tab = await opened;
-  await tab.waitForLoadState();
-  expect(tab.url()).toBe(site.signInUrl);
-  await tab.close();
 });
 
 test("SI3 after signing in and coming back, the page reloads once by itself and is marked", async () => {
@@ -74,8 +65,7 @@ test("SI3 after signing in and coming back, the page reloads once by itself and 
   await expect(page.locator("#title")).toHaveAttribute("data-tms-hl", /.*/);
 });
 
-test("SI4 the panel no longer shows the sign-in line, and names the Editor", async () => {
-  await expect(role(panel, "sign-in")).toBeHidden();
+test("SI4 the panel names the Editor", async () => {
   await expect(role(panel, "editing-as")).toHaveText("Editing as Ada Jensen");
 });
 
@@ -100,7 +90,7 @@ test("SI7 a session that ends mid-edit refuses the save and keeps the draft", as
   const control = panel.locator('[data-role="control"][data-column="value"][data-locale="en"]');
   await control.fill("Deploy tomorrow");
   await panel.locator('[data-role="save"]').click();
-  await expect(role(panel, "sign-in-line")).toHaveText("You are not signed in to this website.");
+  await expect(role(panel, "sign-in-line")).toHaveCount(0);
   await expect(control).toHaveValue("Deploy tomorrow");
 });
 
@@ -114,11 +104,10 @@ test("SI8 after signing in again the page is not reloaded, and the save succeeds
   expect([loads, await site.stored("hero.title")]).toEqual([[], "Deploy tomorrow"]);
 });
 
-test("SI9 signed in without the Editor role, the panel says so, followed by the website's help text", async () => {
+test("SI9 signed in without the Editor role, the panel says nothing about it", async () => {
   site.endSessions();
   await signInElsewhere("sam");
   await page.reload();
-  await expect(role(panel, "sign-in-line")).toHaveText("You are signed in, but may not edit translations here. Ask whoever manages your access to this website.");
-  await expect(role(panel, "sign-in-help")).toHaveText(HELP.forbidden);
+  await expect(role(panel, "sign-in-line")).toHaveCount(0);
   await expect(outlined()).toHaveCount(0);
 });

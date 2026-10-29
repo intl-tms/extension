@@ -6,7 +6,6 @@ import {
   createSession,
   isHelpText,
   isHttpUrl,
-  readHelpText,
   readSignInDescriptor,
   resolveLocale,
   type Found,
@@ -223,8 +222,7 @@ export function createPageHost(options: PageHostOptions): PageHost {
     }
     // A 403 for a foreign origin is about the request, not about the Editor.
     if (!isObject(body) || body.code !== "forbidden") return;
-    const help = readHelpText(body.help);
-    setSignIn(help === undefined ? { state: "not-permitted" } : { state: "not-permitted", help });
+    setSignIn({ state: "not-permitted" });
   }
 
   /**

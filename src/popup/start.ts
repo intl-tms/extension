@@ -26,7 +26,6 @@ export function startPopup(api: PopupApi, container: HTMLElement): Promise<void>
           if (area !== "session" || !(STORAGE.stash in changes)) return;
           void activeTab().then((tab) => listener(statusIn(changes[STORAGE.stash]?.newValue, tab?.id)), () => undefined);
         }),
-      openTab: (url) => void api.tabs.create({ url }),
     },
   });
 }

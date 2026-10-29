@@ -242,7 +242,7 @@ was chosen and why.
 - **One place sees every answer.** The Page Host wraps the request function it
   gives the Core's client and uses for the configuration. A `401` sets the
   sign-in state to *not signed in* with the descriptor, a `403` whose code is
-  `forbidden` to *not permitted* with the help text, and any successful answer
+  `forbidden` to *not permitted*, and any successful answer
   to *accepted*. A `403` with another code (`forbidden-origin`) is about the
   request and changes nothing. Bodies are read from a copy.
 - **The state is a member of the page status**, `signIn`, so the Worker
@@ -251,8 +251,9 @@ was chosen and why.
 - **The panel gets its own message, `sign-in-changed`,** relayed only when the
   sign-in part of a status changes, so a busy page's scans do not repaint the
   panel. Once a Selection is shown, the panel follows only that tab.
-- **Every receiver validates** the state with the Core's
-  `readSignInDescriptor` and `readHelpText`. The Editor's name is accepted
+- **The website's help text is never shown.** It can name internal pages or
+  steps, and the Extension displays only its own words. Every receiver
+  validates the state with the Core's `readSignInDescriptor`. The Editor's name is accepted
   only when it passes the help-text rule (one short line).
 - **Coming back** is the page's `visibilitychange` to visible, while edit mode
   is on and the state is *not signed in*. The listener is added when edit mode
@@ -264,8 +265,10 @@ was chosen and why.
 - **Credentials.** A `401` whose descriptor asks for credentials is repeated
   once with `credentials: "include"`, and every later request of the page load
   includes them.
-- **Help text after a `401` without a sign-in address** is still shown under
-  "This website refused the request."
+- **The panel and the Popup show no sign-in line, button or address.** A
+  refusal can only leak the website's login address or internal wording, so
+  the Extension keeps the state for the reload and "Editing as" and shows
+  nothing else.
 - **End to end**, `e2e/sign-in.spec.ts` runs against a fixture website with a
   login for Editors. The test browser never hides a background tab, so the
   test sends the page the `visibilitychange` a real tab switch would.
