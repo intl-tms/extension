@@ -240,7 +240,7 @@ export function createPageHost(options: PageHostOptions): PageHost {
       } catch {
         body = undefined;
       }
-      if (readSignInDescriptor(body)?.session?.credentials === true) {
+      if (readSignInDescriptor(body)?.credentials === true) {
         withCredentials = true;
         response = await attempt();
       }

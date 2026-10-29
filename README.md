@@ -55,8 +55,7 @@ The page reloads once, and every piece of translated text gets an outline.
 ### Sign in
 
 Websites let only their Editors edit. The extension says nothing about signing
-in and never shows a sign-in address or any text the website sends with a
-refusal. Sign in to the website in an ordinary tab, the way you normally do,
+in and never shows any text the website sends with a refusal. Sign in to the website in an ordinary tab, the way you normally do,
 then come back to the page: it reloads once by itself and is outlined. Signing
 in lasts a working day; after that you are asked again.
 
@@ -193,9 +192,9 @@ For the extension to work, a website must:
 It must never cache a marked response for another visitor, and never treat the
 cookie as authorization: anyone can set a cookie. Protection is the handler's
 `authorize`, built with the Core's `sessionCheck` over a login for Editors on
-the same site as the pages. The Extension learns how to sign in from the
-handler's refusal: a `401` or `403` only tells it the Editor is not let in.
-Any sign-in address or help text the website adds is never shown.
+the same site as the pages. A `401` or `403` only tells the Extension that
+the Editor is not let in, and whether requests must include credentials. Any
+help text the website adds is never shown.
 
 ## Development
 

@@ -4,7 +4,7 @@ import { opened, panel } from "./support/view.js";
 
 describe("panel: signing in", () => {
   it.each([
-    { state: "not-signed-in", descriptor: { session: { signIn: "https://a.example/in" }, help: "Use your company account." } },
+    { state: "not-signed-in", descriptor: { credentials: true, help: "Use your company account." } },
     { state: "not-signed-in" },
     { state: "not-permitted", help: "Ask IT." },
   ])("says nothing and offers no way to sign in: %j", (status) => {

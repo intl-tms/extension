@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sessionCheck, type Authorize } from "@intl-tms/core";
 import type { PageStatus } from "../src/shared/protocol.js";
-import { BASE, CONFIG_URL, SITE, boot, byId, cleanup, click, mark, settle } from "./support/page.js";
+import { BASE, CONFIG_URL, boot, byId, cleanup, click, mark, settle } from "./support/page.js";
 
 const MARKED = `<p id="p">${mark("Hej", "greeting")}</p>`;
 const UNMARKED = `<p id="p">Hej</p>`;
@@ -13,7 +13,6 @@ function website(options: { credentials?: boolean; help?: { unauthenticated?: st
   const authorize: Authorize = sessionCheck({
     user: () => (state.signedIn ? { id: "ada", name: "Ada Jensen" } : null),
     may: () => state.editor,
-    signIn: "/editors/sign-in",
     ...(options.credentials === undefined ? {} : { credentials: options.credentials }),
     ...(options.help === undefined ? {} : { help: options.help }),
   });
@@ -41,7 +40,7 @@ describe("the sign-in state", () => {
     const { authorize } = website({ help: { unauthenticated: "Use your company account." } });
     const page = boot({ html: UNMARKED, authorize });
     await page.on();
-    expect(signIn(page)).toEqual({ state: "not-signed-in", descriptor: { session: { signIn: `${SITE}/editors/sign-in` }, help: "Use your company account." } });
+    expect(signIn(page)).toEqual({ state: "not-signed-in", descriptor: { help: "Use your company account." } });
   });
 
   it("a 401 without a descriptor is still not signed in", async () => {
@@ -50,8 +49,8 @@ describe("the sign-in state", () => {
     expect(signIn(page)).toEqual({ state: "not-signed-in", descriptor: {} });
   });
 
-  it("a sign-in address that is not a web address is dropped", async () => {
-    const page = boot({ html: UNMARKED, request: async () => new Response(JSON.stringify({ error: "unauthorized", code: "unauthorized", auth: { session: { signIn: "javascript:alert(1)" } } }), { status: 401 }) });
+  it("a session member from an older website is dropped", async () => {
+    const page = boot({ html: UNMARKED, request: async () => new Response(JSON.stringify({ error: "unauthorized", code: "unauthorized", auth: { session: { signIn: "https://app.test/in", credentials: true } } }), { status: 401 }) });
     await page.on();
     expect(signIn(page)).toEqual({ state: "not-signed-in", descriptor: {} });
   });

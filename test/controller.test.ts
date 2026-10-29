@@ -301,9 +301,9 @@ describe("controller: signing in", () => {
     expect(calls.some(([name]) => name === "setSignIn")).toBe(false);
   });
 
-  it("validates the state: a sign-in address that is not a web address is dropped", () => {
+  it("validates the state: a pairing address that is not a web address is dropped", () => {
     const { calls, push } = setup();
-    push("sign-in-changed", { status: { state: "not-signed-in", descriptor: { session: { signIn: "javascript:x" } } } }, { tab: 7 });
+    push("sign-in-changed", { status: { state: "not-signed-in", descriptor: { pair: { address: "javascript:x" } } } }, { tab: 7 });
     expect(calls.at(-1)).toEqual(["setSignIn", { state: "not-signed-in", descriptor: {} }]);
   });
 });

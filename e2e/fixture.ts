@@ -52,7 +52,7 @@ export async function startFixture(options: { alwaysMarked?: boolean; login?: bo
   };
   const authorize: Authorize =
     options.login === true
-      ? sessionCheck({ user: (request) => sessionOf(request.headers.get("cookie")), may: (user) => user.editor, signIn: "/editors/sign-in", help: HELP })
+      ? sessionCheck({ user: (request) => sessionOf(request.headers.get("cookie")), may: (user) => user.editor, help: HELP })
       : () => true;
 
   const server: Server = createServer((request, response) => {
