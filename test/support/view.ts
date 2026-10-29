@@ -46,7 +46,7 @@ export function panel(setup: PanelSetup = {}) {
     }
     return { ok: true, results: Object.fromEntries(Object.keys(writes).map((locale) => [locale, { ok: true, status: 200 }])) };
   });
-  const callbacks = { save, navigate: vi.fn(), flash: vi.fn(), openHidden: vi.fn() };
+  const callbacks = { save, navigate: vi.fn(), flash: vi.fn(), openHidden: vi.fn(), signIn: vi.fn() };
   const log = createLog({ now: () => new Date(2026, 0, 10, 9, 5, 3) });
   const driver = createPanelView({ callbacks, container, log, now: () => NOW, ...setup.view });
   if (setup.config !== false) driver.setConfig(setup.config ?? CONFIG);

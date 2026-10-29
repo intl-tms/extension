@@ -16,7 +16,8 @@ import {
   type ResolvedFilter,
 } from "@intl-tms/core/tools";
 import type { FieldDef } from "@intl-tms/core";
-import { DIAGNOSTICS, PANEL, PRODUCT } from "../shared/strings.js";
+import { editingAs, signInLine } from "../shared/sign-in.js";
+import { DIAGNOSTICS, PANEL, PRODUCT, SIGN_IN } from "../shared/strings.js";
 import type { PanelCallbacks, PanelDriver } from "./controller.js";
 import { createLog, type Log } from "./log.js";
 
@@ -116,7 +117,28 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
 
   const header = element("header");
   header.className = "panel-header";
-  header.append(element("h1", undefined, PRODUCT.name));
+  const editingAsLine = element("p", "editing-as");
+  editingAsLine.className = "editing-as";
+  editingAsLine.hidden = true;
+  header.append(element("h1", undefined, PRODUCT.name), editingAsLine);
+
+  // What the website said about letting the Editor in. The draft below is
+  // never touched by it: a refused save keeps its draft until the Editor
+  // signs in and saves again.
+  const signIn = element("section", "sign-in");
+  signIn.className = "sign-in";
+  signIn.hidden = true;
+  const signInText = element("p", "sign-in-line");
+  signInText.setAttribute("role", "status");
+  const signInHelp = element("p", "sign-in-help");
+  signInHelp.className = "help";
+  const signInButton = element("button", "sign-in-button", SIGN_IN.signIn);
+  signInButton.type = "button";
+  let signInAddress: string | undefined;
+  signInButton.addEventListener("click", () => {
+    if (signInAddress !== undefined) callbacks.signIn(signInAddress);
+  });
+  signIn.append(signInText, signInHelp, signInButton);
 
   const editor = element("section", "editor");
   editor.className = "editor";
@@ -177,7 +199,7 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
   logPane.tabIndex = 0;
   diagnostics.append(element("summary", undefined, DIAGNOSTICS.title), logButtons, logPane);
 
-  container.replaceChildren(header, editor, hidden, diagnostics);
+  container.replaceChildren(header, signIn, editor, hidden, diagnostics);
 
   // ---------------------------------------------------------------------
   // Rows
@@ -610,6 +632,20 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
   // ---------------------------------------------------------------------
 
   return {
+    setSignIn(status) {
+      const line = signInLine(status);
+      signIn.hidden = line === undefined;
+      signInText.textContent = line?.text ?? "";
+      // The website's words are text, never markup or a link.
+      signInHelp.textContent = line?.help ?? "";
+      signInHelp.hidden = line?.help === undefined;
+      signInAddress = line?.signIn;
+      signInButton.hidden = signInAddress === undefined;
+      const name = editingAs(status);
+      editingAsLine.textContent = name ?? "";
+      editingAsLine.hidden = name === undefined;
+    },
+
     open(openedKey, locale, onPageValue) {
       harvest();
       store.open(openedKey, locale, onPageValue);

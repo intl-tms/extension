@@ -68,8 +68,10 @@ export interface Payloads {
   "config-loaded": { config?: Partial<ConfigSlice> };
   /** The page's Hidden list changed. `items` defaults to an empty list. */
   "hidden-changed": { items?: HiddenItem[] };
-  /** The page's status changed. Stashed by the Worker; nothing displays it yet. */
+  /** The page's status changed. Stashed by the Worker, and read by the Popup. */
   "status-changed": { status: PageStatus };
+  /** The sign-in state of a tab's page changed. Relayed to the panel only when it changes. Validated by the receiver. */
+  "sign-in-changed": { status?: SignInStatus };
   /** The Side Panel loaded. Replied to with a {@link PanelSeed} or `null`. */
   "panel-ready": Record<string, never>;
   /** Save a key's writes per Locale. Replied to with a save result. `values` defaults to no writes. */
@@ -113,7 +115,7 @@ export const RECEIVES = {
     "flash",
     "open-hidden",
   ],
-  panel: ["selection-opened", "values-loaded", "usage-loaded", "config-loaded", "hidden-changed"],
+  panel: ["selection-opened", "values-loaded", "usage-loaded", "config-loaded", "hidden-changed", "sign-in-changed"],
   page: ["save", "navigate", "flash", "open-hidden"],
 } as const satisfies Record<Destination, readonly Kind[]>;
 
@@ -165,6 +167,7 @@ const VALID: { [K in Kind]: (payload: Loose) => boolean } = {
   "config-loaded": (p) => optional(p.config, isObject),
   "hidden-changed": (p) => optional(p.items, Array.isArray),
   "status-changed": (p) => isObject(p.status),
+  "sign-in-changed": (p) => optional(p.status, isObject),
   "panel-ready": () => true,
   save: (p) => hasKey(p) && optional(p.values, isObject),
   // The address ends in a navigation of the page, where a script-scheme address would run code.

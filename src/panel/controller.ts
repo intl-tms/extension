@@ -2,6 +2,7 @@ import { isHttpUrl } from "@intl-tms/core/tools";
 import type { HiddenItem, PanelConfig, PanelWrite, PersistOutcome } from "@intl-tms/core/tools";
 import type { Usage, ValuesEnvelope } from "@intl-tms/core";
 import { dispatch, message, parseFor, type Kind, type Message, type Payloads } from "../shared/protocol.js";
+import { readSignInStatus, type SignInStatus } from "../shared/sign-in.js";
 
 /** The panel view's inbound calls, which mirror the Core panel store's one to one. */
 export interface PanelDriver {
@@ -10,6 +11,8 @@ export interface PanelDriver {
   setUsage(key: string, usages: Usage[], error: boolean): void;
   setConfig(config: PanelConfig): void;
   setHidden(items: HiddenItem[]): void;
+  /** What the website last said about letting the Editor in, validated. */
+  setSignIn(status: SignInStatus | undefined): void;
 }
 
 /** What the panel view calls when the Editor acts. */
@@ -22,6 +25,8 @@ export interface PanelCallbacks {
   flash(id: string): void;
   /** Opens a Hidden item for editing, as if it had been clicked on the page. */
   openHidden(id: string): void;
+  /** Opens the website's sign-in address in a new tab. */
+  signIn(url: string): void;
 }
 
 /** What the controller needs from the browser. */
@@ -97,6 +102,11 @@ export function createController(ports: ControllerPorts): Controller {
             hiddenTab = tab;
             target.setHidden(payload.items ?? []);
           },
+          "sign-in-changed": ({ payload, tab }) => {
+            // The panel speaks for the tab whose translation it shows.
+            if (selectionTab !== undefined && tab !== selectionTab) return;
+            target.setSignIn(readSignInStatus(payload.status));
+          },
         },
         incoming,
       );
@@ -135,6 +145,10 @@ export function createController(ports: ControllerPorts): Controller {
       },
       flash: (id) => fire("flash", { id }, hiddenTab),
       openHidden: (id) => fire("open-hidden", { id }, hiddenTab),
+      signIn(url) {
+        // Checked immediately before opening. The Extension never fetches it; the browser opens it beside the page, which keeps its draft.
+        if (isHttpUrl(url)) ports.openTab(url);
+      },
     },
 
     site: () => selectionSite,
