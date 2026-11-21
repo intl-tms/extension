@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const read = (name: string) => readFileSync(new URL(`../static/${name}`, import.meta.url), "utf8");
@@ -25,7 +25,14 @@ describe("manifest", () => {
     expect([...(manifest.permissions as string[])].sort()).toEqual(["activeTab", "scripting", "sidePanel", "storage"]);
   });
 
-  it("MN6 exposes no file to web pages", () => {
+  it("MN6 every icon the manifest names is a file that ships", () => {
+    const sizes = ["16", "32", "48", "128"];
+    const named = [manifest.icons, (manifest.action as { default_icon: unknown }).default_icon] as Record<string, string>[];
+    expect(named.map((set) => Object.keys(set).sort((a, b) => Number(a) - Number(b)))).toEqual([sizes, sizes]);
+    for (const set of named) for (const path of Object.values(set)) expect(existsSync(new URL(`../static/${path}`, import.meta.url))).toBe(true);
+  });
+
+  it("MN7 exposes no file to web pages", () => {
     expect([manifest.web_accessible_resources, manifest.externally_connectable]).toEqual([undefined, undefined]);
   });
 
@@ -41,7 +48,7 @@ describe("manifest", () => {
 });
 
 describe.each(["popup.html", "panel.html"])("%s", (shell) => {
-  it("MN7 contains no inline script", () => {
+  it("MN8 contains no inline script", () => {
     expect(read(shell)).not.toMatch(/<script(?![^>]*\ssrc=)[^>]*>|\son\w+\s*=/i);
   });
 

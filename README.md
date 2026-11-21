@@ -225,6 +225,21 @@ those ports, and a three-line `main.ts` that passes the real `chrome`.
 | Side Panel | `src/panel/controller.ts`, `view.ts`, `log.ts` | The editing UI: a thin view over the Core's panel store. |
 | shared | `src/shared/` | Site helpers, stored value names, the message protocol, the string catalogue: each defined once. |
 
+### The icon
+
+`icon/` holds the artwork the shipped PNGs are rendered from. It is the only
+thing that is edited; `static/icons/*.png` is output, and a test fails if an
+icon the manifest names is not a file that ships.
+
+```
+pnpm icons   # renders static/icons/*.png, and icon/preview.png to look at
+```
+
+Two sources, because the full artwork's three text lines collide into a smudge
+at 16px: `icon/icon.svg` for 48 and 128, `icon/icon-small.svg` below that. The
+browser that builds the extension does the rasterising, so there is no image
+toolchain to install.
+
 ### Manual check
 
 Three things no automated test can do: answer Chrome's permission prompt, open
