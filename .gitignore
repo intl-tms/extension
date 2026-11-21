@@ -5,3 +5,11 @@ node_modules/
 dist/
 dist-e2e/
 test-results/
+
+# Chrome Web Store listing material: copy, screenshots, promo images, and the
+# scripts that make them. None of it ships, and none of it is kept here.
+store/
+scripts/screenshots.mjs
+scripts/screenshots/
+scripts/promos.mjs
+icon/preview.png

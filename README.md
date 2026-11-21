@@ -6,8 +6,8 @@
 > its own login for Editors and the `authorize` check its developers build.
 > Use the Extension on local and test websites only.
 
-Documentation: <https://intl-tms.github.io/docs/> ·
-Privacy: <https://intl-tms.github.io/docs/privacy>
+Documentation: <https://intl-tms.github.io/> ·
+Privacy: <https://intl-tms.github.io/privacy>
 
 A Chrome extension for editing a website's translations directly on the page.
 Switch it on for a website, hold Alt and click any outlined text, edit it in
@@ -224,6 +224,21 @@ those ports, and a three-line `main.ts` that passes the real `chrome`.
 | Page Host | `src/page/page-host.ts` | Runs inside an enabled website. The Gate, the Toggle cookie, the configuration, and hosting the Core's editing session. |
 | Side Panel | `src/panel/controller.ts`, `view.ts`, `log.ts` | The editing UI: a thin view over the Core's panel store. |
 | shared | `src/shared/` | Site helpers, stored value names, the message protocol, the string catalogue: each defined once. |
+
+### The icon
+
+`icon/` holds the artwork the shipped PNGs are rendered from. It is the only
+thing that is edited; `static/icons/*.png` is output, and a test fails if an
+icon the manifest names is not a file that ships.
+
+```
+pnpm icons   # renders static/icons/*.png, and icon/preview.png to look at
+```
+
+Two sources, because the full artwork's three text lines collide into a smudge
+at 16px: `icon/icon.svg` for 48 and 128, `icon/icon-small.svg` below that. The
+browser that builds the extension does the rasterising, so there is no image
+toolchain to install.
 
 ### Manual check
 

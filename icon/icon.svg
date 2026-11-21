@@ -1,0 +1,25 @@
+<!--
+  The Intl TMS mark: a page, and one line on it wrapped in the outline the
+  Extension draws around editable text. The outline is the one thing an Editor
+  actually sees when edit mode is on, so it is what the icon is made of.
+
+  Every shape is a rectangle, so the file rasterises the same everywhere with
+  no font to install. The grid is 128. `scripts/icons.mjs` renders the PNGs
+  that ship, and uses icon-small.svg below 48px, where these three lines
+  collide into a smudge.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <clipPath id="frame"><rect width="128" height="128" rx="26" /></clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <!-- The ground, left as a thin bezel so the page fills the tile. -->
+    <rect width="128" height="128" fill="#0e2a52" />
+    <rect x="6" y="8" width="116" height="112" rx="19" fill="#ffffff" />
+    <!-- Three lines of text. The text itself is never blue; the outline is. -->
+    <rect x="22" y="28" width="62" height="9" rx="4.5" fill="#aeb6c2" />
+    <rect x="17" y="47" width="94" height="31" rx="9" fill="none" stroke="#1a66d6" stroke-width="6" />
+    <rect x="26" y="58" width="70" height="9" rx="4.5" fill="#aeb6c2" />
+    <rect x="22" y="88" width="46" height="9" rx="4.5" fill="#aeb6c2" />
+  </g>
+</svg>
