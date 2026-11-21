@@ -6,8 +6,8 @@
 > its own login for Editors and the `authorize` check its developers build.
 > Use the Extension on local and test websites only.
 
-Documentation: <https://intl-tms.github.io/docs/> ·
-Privacy: <https://intl-tms.github.io/docs/privacy>
+Documentation: <https://intl-tms.github.io/> ·
+Privacy: <https://intl-tms.github.io/privacy>
 
 A Chrome extension for editing a website's translations directly on the page.
 Switch it on for a website, hold Alt and click any outlined text, edit it in
