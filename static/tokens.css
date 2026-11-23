@@ -1,47 +1,117 @@
-/* Visual tokens (specification document 09 §7). Rules use these names, never literal values. */
+/* Visual tokens. Rules use these names, never literal values. See DESIGN.md. */
 :root {
   color-scheme: light dark;
+
+  /* Ground */
   --surface: #ffffff;
-  --surface-raised: #f6f7f9;
-  --surface-sunken: #eceef2;
-  --surface-inverse: #1c2028;
-  --border: #c6cbd3;
-  --text: #1c2028;
-  --text-muted: #565e6b;
-  --text-inverse: #f4f5f7;
-  --accent: #1a66d6;
-  --accent-tint: #e8f0fc;
-  --primary: #1a5fc4;
-  --danger: #b3261e;
-  --success: #1c6e3c;
-  --warning: #8a5300;
-  --warning-tint: #fff4dc;
-  --font-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --surface-raised: #fafafa;
+  --surface-sunken: #f4f4f5;
+  --surface-inverse: #18181b;
+
+  /* A hairline inside a group; the border a group itself carries. The second
+     is darker on purpose: a box around an input is an affordance and needs
+     3:1 against its ground (WCAG 1.4.11). */
+  --border: #e4e4e7;
+  --border-input: #d4d4d8;
+
+  /* Text. --text-subtle is the lightest grey allowed on text, and holds 4.5:1
+     on every surface above, --surface-sunken included. */
+  --text: #18181b;
+  --text-muted: #52525b;
+  --text-subtle: #6b6b75;
+  --text-inverse: #fafafa;
+
+  /* The one primary action. Near-black, not the accent. */
+  --primary: #18181b;
+  --primary-text: #fafafa;
+
+  /* The single accent: focus, the Locale on the page, the outline on a website. */
+  --accent: #8b5cf6;
+  --accent-strong: #5b21b6;
+  --accent-tint: #f5f3ff;
+  --accent-ring: #ede9fe;
+  --accent-border: #a78bfa;
+
+  /* Only what stops a save. */
+  --danger: #dc2626;
+  --danger-text: #991b1b;
+  --danger-tint: #fef2f2;
+  --danger-border: #fca5a5;
+
+  /* Only a Write conflict. */
+  --warning: #ca8a04;
+  --warning-text: #854d0e;
+  --warning-tint: #fefce8;
+  --warning-border: #fde68a;
+
+  /* Only a finished save. */
+  --success: #16a34a;
+  --success-text: #15803d;
+
+  --font-ui: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --size-base: 14px;
-  --size-small: 12px;
-  --size-smallest: 11px;
+
+  --size-value: 14px;
+  --size-base: 13px;
+  --size-field: 12px;
+  --size-small: 11px;
+  --size-caption: 10px;
+
   --control-height: 32px;
-  --radius-control: 4px;
-  --radius-row: 8px;
+  --height-value: 38px;
+  --height-field: 32px;
+  --height-readonly: 28px;
+  --label-addon: 86px;
+
+  --radius-group: 8px;
+  --radius-control: 6px;
+  --radius-pill: 999px;
+
+  --gutter: 14px;
+  --ring: 3px;
+
+  /* The only shadow in the panel: what the language picker floats on. */
+  --shadow-popover: 0 8px 24px rgb(0 0 0 / 0.18);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --surface: #171a20;
-    --surface-raised: #20242c;
-    --surface-sunken: #2a2f39;
-    --surface-inverse: #0d0f13;
-    --border: #454c59;
-    --text: #eceef2;
-    --text-muted: #a9b1be;
-    --text-inverse: #f4f5f7;
-    --accent: #7fb0ff;
-    --accent-tint: #1d2b44;
-    --primary: #2f6fd0;
-    --danger: #ff8a80;
-    --success: #6fd49a;
-    --warning: #f0b75a;
-    --warning-tint: #3a2e14;
+    --surface: #17171a;
+    --surface-raised: #1f1f23;
+    --surface-sunken: #27272a;
+    --surface-inverse: #09090b;
+
+    --border: #35353c;
+    --border-input: #55555d;
+
+    --text: #f4f4f5;
+    --text-muted: #b4b4bd;
+    --text-subtle: #9a9aa4;
+    --text-inverse: #18181b;
+
+    /* Inverted with the ground: the primary action stays the highest contrast thing on screen. */
+    --primary: #f4f4f5;
+    --primary-text: #18181b;
+
+    --accent: #a78bfa;
+    --accent-strong: #c4b5fd;
+    --accent-tint: #2a1f4d;
+    --accent-ring: #3b2d6b;
+    --accent-border: #7c5cf0;
+
+    --danger: #f87171;
+    --danger-text: #fca5a5;
+    --danger-tint: #3a1618;
+    --danger-border: #7f2a2a;
+
+    --warning: #facc15;
+    --warning-text: #fde68a;
+    --warning-tint: #3a2e0c;
+    --warning-border: #6b5410;
+
+    --success: #4ade80;
+    --success-text: #86efac;
+
+    --shadow-popover: 0 10px 28px rgb(0 0 0 / 0.55);
   }
 }

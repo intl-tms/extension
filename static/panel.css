@@ -1,10 +1,12 @@
+/* The Side Panel. Anatomy and rules: DESIGN.md. */
+
 html,
 body {
   height: 100%;
 }
 
 html {
-  font: var(--size-base) / 1.4 var(--font-ui);
+  font: var(--size-base) / 1.45 var(--font-ui);
   color: var(--text);
   background: var(--surface);
 }
@@ -34,8 +36,12 @@ ul {
   list-style: none;
 }
 
+/* ------------------------------------------------------------------ */
+/* The key                                                             */
+/* ------------------------------------------------------------------ */
+
 .panel-header {
-  padding: 10px 12px;
+  padding: 10px var(--gutter);
   border-bottom: 1px solid var(--border);
 }
 
@@ -48,16 +54,18 @@ ul {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 12px;
+  padding: 13px var(--gutter) var(--gutter);
 }
 
 .placeholder {
   color: var(--text-muted);
 }
 
+/* The source message, when the key has one: an Editor should read words, not a hash. */
 [data-role="title"] {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
@@ -67,14 +75,23 @@ code,
   font-family: var(--font-mono);
 }
 
+/* The key, and what is true of the key, on one wrapping line. */
+.key-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 5px;
+}
+
 .key-chip,
 .key-small {
-  display: inline-block;
   max-width: 100%;
   overflow-wrap: anywhere;
   font-size: var(--size-small);
 }
 
+/* The key alone, when there is no source message to head the panel. */
 .key-chip {
   padding: 2px 6px;
   border-radius: var(--radius-control);
@@ -82,83 +99,317 @@ code,
 }
 
 .key-small {
-  color: var(--text-muted);
-  font-size: var(--size-smallest);
-}
-
-.shared {
-  margin-top: 6px;
-  font-size: var(--size-small);
-  color: var(--text-muted);
+  color: var(--text-subtle);
 }
 
 [data-role="shared-badge"] {
-  padding: 1px 6px;
-  border: 1px solid var(--warning);
-  border-radius: var(--radius-control);
-  background: var(--warning-tint);
-  color: var(--warning);
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 18px;
+  padding: 0 6px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-pill);
+  background: var(--accent-tint);
+  color: var(--accent-strong);
+  font-size: var(--size-caption);
+  font-weight: 500;
 }
 
+/*
+ * A quiet aside under the key: the Shared notice, and the Developer's note for
+ * translators. Set off by a rule rather than a box, because neither is a thing
+ * to act on.
+ */
+.aside {
+  margin: 8px 0 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--size-small);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------ */
+/* Section heading and toolbar                                         */
+/* ------------------------------------------------------------------ */
+
+.section {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+[data-role="locale-count"] {
+  color: var(--text-muted);
+  font-size: var(--size-small);
+}
+
+/* Search takes its own row; the Schema's filters share the next one. */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 7px;
+  margin-top: 8px;
 }
 
-.toolbar input {
-  flex: 1 1 120px;
+/* Search takes a row of its own, at the group's radius: it is a group of one. */
+.toolbar [data-role="search"] {
+  flex: 1 1 100%;
+  border-radius: var(--radius-group);
 }
 
-.toolbar select {
+/* A filter is its Field's label and its options, grouped like a Field's row. */
+.filter {
+  display: flex;
+  align-items: stretch;
   flex: 0 1 auto;
-  width: auto;
+  min-width: 0;
+  height: var(--control-height);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-group);
+  overflow: hidden;
 }
+
+[data-role="filter-label"] {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-right: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: var(--size-small);
+  white-space: nowrap;
+}
+
+.filter select {
+  width: auto;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  font-size: var(--size-field);
+}
+
+/* ------------------------------------------------------------------ */
+/* One Locale: a label line, then one group                            */
+/* ------------------------------------------------------------------ */
 
 .rows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.row {
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-row);
-  background: var(--surface-raised);
-}
-
-.row[data-current="true"] {
-  border-color: var(--accent);
-  background: var(--accent-tint);
+  gap: var(--gutter);
+  margin-top: 12px;
 }
 
 .row-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
+}
+
+[data-role="language"] {
+  font-size: var(--size-base);
+  font-weight: 600;
 }
 
 [data-role="locale"] {
-  padding: 1px 6px;
-  border-radius: var(--radius-control);
-  background: var(--surface-sunken);
-  font-size: var(--size-small);
+  font-size: var(--size-caption);
+  color: var(--text-subtle);
 }
 
-.row[data-current="true"] [data-role="locale"] {
-  background: var(--accent);
-  color: var(--surface);
+[data-role="current-cue"],
+[data-role="source-cue"] {
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-size: var(--size-caption);
+  font-weight: 500;
 }
 
 [data-role="current-cue"] {
-  color: var(--text-muted);
-  font-size: var(--size-smallest);
+  background: var(--accent-tint);
+  color: var(--accent-strong);
 }
+
+[data-role="source-cue"] {
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+}
+
+/* Pushed to the end of the label line. Only one of the two is ever shown. */
+[data-role="empty-cue"],
+[data-role="dirty-cue"] {
+  margin-left: auto;
+  font-size: var(--size-caption);
+}
+
+[data-role="empty-cue"] {
+  color: var(--text-subtle);
+}
+
+[data-role="dirty-cue"] {
+  color: var(--accent-strong);
+  font-weight: 500;
+}
+
+/*
+ * The group is the Locale's one border and one focus ring. Every control
+ * inside it is bare, so the group's border reads as the input's border — which
+ * is also the 3:1 non-text contrast an input owes (WCAG 1.4.11).
+ */
+.group {
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-group);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.group:focus-within,
+.row[data-current="true"] .group {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 var(--ring) var(--accent-ring);
+}
+
+/* The translation: the only thing in the panel at reading size. */
+.group > [data-role="control"] {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  height: var(--height-value);
+  padding: 0 10px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--size-value);
+}
+
+.group > textarea[data-role="control"] {
+  height: auto;
+  padding: 9px 10px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+/* ------------------------------------------------------------------ */
+/* A Schema's Fields, inside the same border                           */
+/* ------------------------------------------------------------------ */
+
+.field {
+  display: flex;
+  align-items: stretch;
+  min-height: var(--height-field);
+  border-top: 1px solid var(--border);
+}
+
+/*
+ * The label addon. Its text never wraps: a Field label broken across two lines
+ * makes the row taller than the control beside it and reads as a fault. A long
+ * label is clipped instead, and the control's accessible name carries it whole.
+ */
+[data-role="field-label"] {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 var(--label-addon);
+  box-sizing: border-box;
+  padding: 0 9px;
+  border-right: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: var(--size-small);
+  white-space: nowrap;
+}
+
+[data-role="field-label-text"] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-role="required-mark"] {
+  flex: 0 0 auto;
+  color: var(--danger-text);
+}
+
+.field > [data-role="control"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--height-field);
+  padding: 0 9px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--size-field);
+}
+
+/* A select draws its own arrow inside the padding box, so it gets a touch less. */
+.field > select[data-role="control"] {
+  padding: 0 7px;
+}
+
+.field[data-type="textarea"] [data-role="field-label"] {
+  align-items: flex-start;
+  padding-top: 8px;
+}
+
+.field > textarea[data-role="control"] {
+  height: auto;
+  padding: 7px 9px;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+/* A Read-only Field is never written, so it gets text on a tinted row, not an input. */
+.field[data-type="readonly"] {
+  min-height: var(--height-readonly);
+  background: var(--surface-raised);
+}
+
+/* Darker than its label: it is a value, even though it is not an input. */
+.field[data-type="readonly"] [data-role="readonly"] {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 9px;
+  color: var(--text);
+  font-size: var(--size-small);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Notes are full-width strips under the control they belong to, inside the
+ * group. Colour is spent by cause: what blocks a save, and a Write conflict.
+ */
+.note {
+  padding: 5px 10px;
+  border-top: 1px solid var(--border);
+  font-size: var(--size-small);
+  overflow-wrap: anywhere;
+}
+
+[data-role="tag-error"].note,
+[data-role="required"].note {
+  border-top-color: var(--danger-border);
+  background: var(--danger-tint);
+  color: var(--danger-text);
+}
+
+[data-role="conflict"].note {
+  border-top-color: var(--warning-border);
+  background: var(--warning-tint);
+  color: var(--warning-text);
+}
+
+/* ------------------------------------------------------------------ */
+/* Controls outside a group                                            */
+/* ------------------------------------------------------------------ */
 
 input,
 select,
@@ -166,7 +417,7 @@ textarea {
   width: 100%;
   box-sizing: border-box;
   padding: 0 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-input);
   border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--text);
@@ -187,6 +438,11 @@ textarea {
   border-color: var(--danger);
 }
 
+/*
+ * The group carries the ring, so a control inside it marks itself with an
+ * inset outline: with several controls in one group the ring alone would not
+ * say which one has focus.
+ */
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
@@ -197,96 +453,84 @@ summary:focus-visible,
   outline-offset: 1px;
 }
 
-.field {
-  margin-top: 6px;
+.group :is(input, select, textarea):focus-visible {
+  outline-offset: -2px;
 }
 
-.field label {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--text-muted);
-  font-size: var(--size-small);
-}
-
-[data-role="readonly"] {
-  min-height: 1.4em;
-  padding: 4px 8px;
-  border-radius: var(--radius-control);
-  background: var(--surface-sunken);
-  font-size: var(--size-small);
-  overflow-wrap: anywhere;
-}
-
-.error,
 .hint {
-  margin-top: 4px;
-  color: var(--danger);
+  margin-top: 6px;
+  color: var(--danger-text);
   font-size: var(--size-small);
-}
-
-.conflict {
-  margin-top: 4px;
-  padding: 4px 8px;
-  border-left: 3px solid var(--warning);
-  background: var(--warning-tint);
-  color: var(--warning);
-  font-size: var(--size-small);
-  overflow-wrap: anywhere;
 }
 
 .actions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: var(--gutter);
 }
 
 button {
   height: var(--control-height);
   padding: 0 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-input);
   border-radius: var(--radius-control);
-  background: var(--surface-raised);
-  color: var(--text);
+  background: var(--surface);
+  color: var(--text-muted);
   font: inherit;
+  font-weight: 500;
   cursor: pointer;
 }
 
+/* The one primary action on the surface: near-black, not the accent. */
 button.primary {
+  flex: 1 1 auto;
   border-color: var(--primary);
   background: var(--primary);
-  color: var(--text-inverse);
-  font-weight: 600;
+  color: var(--primary-text);
 }
 
 button:disabled {
-  opacity: 0.55;
+  border-color: var(--border);
+  background: var(--surface-sunken);
+  color: var(--text-subtle);
   cursor: not-allowed;
 }
 
 .status {
-  min-height: 1.4em;
-  margin-top: 8px;
+  min-height: 1.45em;
+  margin-top: 7px;
+  font-family: var(--font-ui);
   font-size: var(--size-small);
+  color: var(--text-muted);
   overflow-wrap: anywhere;
 }
 
 .status[data-kind="success"] {
-  color: var(--success);
+  color: var(--success-text);
 }
 
 .status[data-kind="error"] {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
+/* ------------------------------------------------------------------ */
+/* Used on, Hidden, Diagnostics                                        */
+/* ------------------------------------------------------------------ */
+
 h3 {
-  margin-bottom: 4px;
-  color: var(--text-muted);
-  font-size: var(--size-small);
+  color: var(--text-subtle);
+  font-size: var(--size-caption);
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .used-on {
-  margin-top: 14px;
+  margin-top: 18px;
+}
+
+.used-on h3 {
+  margin-bottom: 4px;
 }
 
 .used-on ul {
@@ -295,7 +539,7 @@ h3 {
 }
 
 [data-role="used-on-state"] {
-  color: var(--text-muted);
+  color: var(--text-subtle);
   font-size: var(--size-small);
 }
 
@@ -307,7 +551,9 @@ h3 {
   min-height: 28px;
   padding: 4px 6px;
   border: 0;
+  border-radius: var(--radius-control);
   background: none;
+  font-weight: 400;
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -320,21 +566,26 @@ h3 {
 }
 
 [data-role="usage-path"] {
-  color: var(--accent);
+  color: var(--accent-strong);
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 [data-role="usage-count"],
 [data-role="usage-time"],
 [data-role="usage-new-tab"],
 [data-role="hidden-key"] {
-  color: var(--text-muted);
-  font-size: var(--size-smallest);
+  color: var(--text-subtle);
+  font-size: var(--size-caption);
 }
 
 .hidden-list {
-  padding: 8px 12px;
+  padding: 8px var(--gutter);
   border-top: 1px solid var(--border);
+}
+
+.hidden-list h3 {
+  margin-bottom: 4px;
 }
 
 .hidden-list ul {
@@ -346,16 +597,18 @@ h3 {
   padding: 0 4px;
   border-radius: var(--radius-control);
   background: var(--surface-sunken);
-  font-size: var(--size-smallest);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
 }
 
 .diagnostics {
+  padding: 6px var(--gutter);
   border-top: 1px solid var(--border);
-  padding: 6px 12px;
 }
 
 .diagnostics summary {
-  color: var(--text-muted);
+  color: var(--text-subtle);
   font-size: var(--size-small);
   cursor: pointer;
 }
@@ -379,10 +632,17 @@ h3 {
   border-radius: var(--radius-control);
   background: var(--surface-inverse);
   color: var(--text-inverse);
-  font-size: var(--size-smallest);
+  font-size: var(--size-caption);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* The log is already the darkest thing on a light panel; on a dark one it reads inverted. */
+  [data-role="log"] {
+    color: var(--text);
+  }
 }
 
 [hidden] {
@@ -391,8 +651,168 @@ h3 {
 
 .editing-as {
   margin: 2px 0 0;
-  color: var(--text-muted);
+  color: var(--text-subtle);
   font-size: var(--size-small);
   overflow-wrap: anywhere;
 }
 
+/* The running build, beside the product name. Dim on purpose: it is for telling
+   a stale panel from a fresh one, not for reading. */
+[data-role="version"] {
+  margin-left: 6px;
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--size-caption);
+  font-weight: 400;
+}
+
+/* ------------------------------------------------------------------ */
+/* Which Locales are shown                                             */
+/* ------------------------------------------------------------------ */
+
+/*
+ * A native disclosure, so Enter, Space and Escape work and nothing has to be
+ * positioned in script. The body overlays the rows beneath it rather than
+ * pushing them down, which would move the translation an Editor is reading.
+ */
+.picker {
+  position: relative;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--control-height);
+  box-sizing: border-box;
+  padding: 0 9px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-group);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--size-field);
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+}
+
+.picker-trigger::-webkit-details-marker {
+  display: none;
+}
+
+/* Narrowed is a live state, so the trigger carries the accent while it lasts. */
+.picker[data-narrowed="true"] .picker-trigger {
+  border-color: var(--accent-border);
+  background: var(--accent-tint);
+  color: var(--accent-strong);
+}
+
+[data-role="picker-count"] {
+  margin-left: auto;
+  color: var(--text-subtle);
+  font-weight: 400;
+}
+
+.picker[data-narrowed="true"] [data-role="picker-count"] {
+  color: var(--accent-strong);
+  font-weight: 500;
+}
+
+/*
+ * Reaches a little past its own column: the row underneath may be the Current
+ * Locale, whose focus ring stands outside the row's box and would otherwise
+ * show as two violet slivers beside the open list.
+ */
+.picker-body {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--control-height) + 4px);
+  left: calc(-1px - var(--ring));
+  right: calc(-1px - var(--ring));
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-group);
+  background: var(--surface);
+  box-shadow: var(--shadow-popover);
+  overflow: hidden;
+}
+
+[data-role="picker-search"] {
+  height: 34px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  font-size: var(--size-field);
+}
+
+.picker-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-raised);
+}
+
+[data-role="picker-set"] {
+  height: 24px;
+  padding: 0 9px;
+  border-radius: var(--radius-pill);
+  font-size: var(--size-small);
+}
+
+.picker-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: var(--size-field);
+  cursor: pointer;
+}
+
+.picker-item:hover {
+  background: var(--surface-raised);
+}
+
+.picker-item input {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+/* The Locale on the page: ticked and disabled, because the Core always returns it. */
+.picker-item input:disabled {
+  cursor: not-allowed;
+}
+
+[data-role="picker-name"] {
+  font-weight: 500;
+}
+
+[data-role="picker-code"] {
+  color: var(--text-subtle);
+  font-size: var(--size-caption);
+}
+
+[data-role="picker-cue"] {
+  margin-left: auto;
+  color: var(--text-subtle);
+  font-size: var(--size-caption);
+}
+
+.picker-foot {
+  padding: 7px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: var(--size-small);
+}

@@ -244,13 +244,23 @@ describe("panel view: basics", () => {
     expect([view.diagnostics().open, view.log.text().includes("lang=")]).toEqual([false, false]);
   });
 
-  it("VB34 a value control's accessible name includes its Locale", () => {
-    expect(opened().control("da").getAttribute("aria-label")).toBe("da translation");
+  it("VB34 a value control's accessible name names its Locale in words", () => {
+    expect(opened().control("da").getAttribute("aria-label")).toBe("Danish translation");
   });
 
-  it("a Field control's accessible name includes its Locale and its label", () => {
+  it("a Field control's accessible name names its Locale and its label", () => {
     const view = opened({ config: { ...CONFIG, schema: { fields: [STATUS] } } });
-    expect(view.control("da", "status").getAttribute("aria-label")).toBe("da Status");
+    expect(view.control("da", "status").getAttribute("aria-label")).toBe("Danish Status");
+  });
+
+  it("a Locale the browser cannot name keeps its code", () => {
+    const view = opened({ config: { locales: ["en", "zz-ZZ"] } }, { en: { value: "Deploy now" }, "zz-ZZ": { value: "Udrul nu" } });
+    expect(view.control("zz-ZZ").getAttribute("aria-label")).toBe("zz-ZZ translation");
+  });
+
+  it("a Locale's label line shows its name and its code", () => {
+    const head = opened().row("da")?.querySelector('[data-role="language"]');
+    expect([head?.textContent, opened().within("da", "locale")?.textContent]).toEqual(["Danish", "da"]);
   });
 
   it("every editable control carries its Locale and column as data", () => {

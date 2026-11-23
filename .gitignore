@@ -13,3 +13,6 @@ scripts/screenshots.mjs
 scripts/screenshots/
 scripts/promos.mjs
 icon/preview.png
+
+# Development preview output
+.preview/out/

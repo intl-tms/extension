@@ -15,16 +15,25 @@ const root = new URL("../", import.meta.url);
 const out = new URL(e2e ? "dist-e2e/" : "dist/", root);
 const staticDir = new URL("static/", root);
 
+const { version } = JSON.parse(await readFile(new URL("package.json", root), "utf8"));
+
 async function copyStatic() {
   await cp(staticDir, out, { recursive: true });
+  // One version, in package.json. Writing it into the manifest here is what
+  // makes a rebuild visible: an unpacked extension that has not changed its
+  // version looks identical in chrome://extensions, so a stale load and a fresh
+  // one are indistinguishable until you read the number.
+  const versionUrl = new URL("manifest.json", out);
+  const versioned = JSON.parse(await readFile(versionUrl, "utf8"));
+  versioned.version = version;
+  await writeFile(versionUrl, JSON.stringify(versioned, null, 2));
   if (!e2e) return;
   // The browser's permission prompt cannot be clicked by a test, so the test build is granted the
   // fixture website's host at install. Everything after the grant is the shipped code. The
   // manifest test pins that the shipped manifest holds no such access.
-  const manifestUrl = new URL("manifest.json", out);
-  const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
+  const manifest = JSON.parse(await readFile(versionUrl, "utf8"));
   manifest.host_permissions = ["http://localhost/*"];
-  await writeFile(manifestUrl, JSON.stringify(manifest, null, 2));
+  await writeFile(versionUrl, JSON.stringify(manifest, null, 2));
 }
 
 // Clear the output but keep releases/, where `pnpm package` leaves its zips.

@@ -1,13 +1,15 @@
+/* The Popup: which Site edit mode is on for, and the address it reads. See DESIGN.md. */
+
 html {
-  font: var(--size-base) / 1.4 var(--font-ui);
+  font: var(--size-base) / 1.45 var(--font-ui);
   color: var(--text);
   background: var(--surface);
 }
 
 body {
   margin: 0;
-  padding: 12px;
-  width: 220px;
+  padding: var(--gutter);
+  width: 240px;
   box-sizing: border-box;
 }
 
@@ -18,8 +20,8 @@ h1 {
 }
 
 [data-role="site"] {
-  margin: 0 0 10px;
-  min-height: 1.4em;
+  margin: 0 0 12px;
+  min-height: 1.45em;
   color: var(--text-muted);
   font-size: var(--size-small);
   overflow-wrap: anywhere;
@@ -27,16 +29,17 @@ h1 {
 
 .switch {
   display: flex;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .switch button {
   flex: 1;
   height: var(--control-height);
-  border: 1px solid var(--border);
-  background: var(--surface-raised);
-  color: var(--text);
+  border: 1px solid var(--border-input);
+  background: var(--surface);
+  color: var(--text-muted);
   font: inherit;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -49,15 +52,17 @@ h1 {
   border-radius: 0 var(--radius-control) var(--radius-control) 0;
 }
 
+/* Switched on is the one primary action here, so it takes the primary ground. */
 .switch button[aria-pressed="true"] {
-  background: var(--primary);
   border-color: var(--primary);
-  color: var(--text-inverse);
-  font-weight: 600;
+  background: var(--primary);
+  color: var(--primary-text);
 }
 
 .switch button:disabled {
-  color: var(--text-muted);
+  border-color: var(--border);
+  background: var(--surface-sunken);
+  color: var(--text-subtle);
   cursor: not-allowed;
 }
 
@@ -73,11 +78,11 @@ input {
   height: var(--control-height);
   box-sizing: border-box;
   padding: 0 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-input);
   border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--text);
-  font: var(--size-small) var(--font-ui);
+  font: var(--size-field) var(--font-ui);
 }
 
 button:focus-visible,
@@ -86,18 +91,16 @@ input:focus-visible {
   outline-offset: 1px;
 }
 
+/* The Popup's hint is always a reason edit mode cannot be switched on. */
 .hint {
   margin: 8px 0 0;
-  color: var(--danger);
+  color: var(--danger-text);
   font-size: var(--size-small);
 }
 
 .editing-as {
-  color: var(--text-muted);
+  margin: 12px 0 0;
+  color: var(--text-subtle);
   font-size: var(--size-small);
-}
-
-.editing-as {
-  margin: 10px 0 0;
   overflow-wrap: anywhere;
 }
