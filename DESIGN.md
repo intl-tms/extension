@@ -262,15 +262,21 @@ The highlighter's outline uses the same accent as the panel, so the one thing
 an Editor sees on the website matches the tool editing it:
 
 ```
-2px solid   --accent    a marked translation
-3px solid   --accent    while Alt is held
-2px dashed  --accent    an attribute-only translation
+2px solid   --accent         a marked translation
+3px solid   --accent         while Alt is held
+2px dashed  --accent         an attribute-only translation
+2px solid   --accent-strong  the translation open in the panel
+3px solid   --accent-strong  a flash, while a Page row is pointed at
 ```
 
-`DEFAULT_COLORS` in `core/src/highlighter.ts` ships `#4CAF50` and `#2196F3`,
-Material green and blue, which match nothing else in the product. A website can
-still override both through `colors` in its configuration; what changes is the
-default.
+One hue in two weights: `highlight` is `--accent`, `active` is
+`--accent-strong`. These are the Core's `DEFAULT_COLORS`, so a website that
+configures nothing already matches the panel beside it.
+
+**A website may use its own brand instead**, through `colors` in its
+configuration — both outlines are the website's to set, and the panel's accent
+does not follow. That is deliberate: the outline is drawn on someone else's
+page, and the panel is the tool's own surface.
 
 ## Accessibility
 
@@ -306,7 +312,9 @@ Landed:
 
 - The token file, the five-block anatomy, the group, the Field treatments and
   the Locale label line.
-
+- The accent outline, as the Core's `DEFAULT_COLORS`. It reaches a website
+  when the Core is released: the Extension depends on a published version, so
+  until then a website matches by setting `colors` itself.
 - The three tabs and the Page list. The inventory needed no Core change: the
   Page Host already sees every scan through `onScan`, so it publishes the whole
   list itself as `page-markers`. `PanelState.hidden` still carries the Core's
@@ -316,6 +324,5 @@ Not landed yet:
 
 - **Per-Site memory for the language picker.** The chosen set lives for the
   panel's lifetime only.
-- **The accent outline** needs the `DEFAULT_COLORS` change in the Core.
 - **A bulk values read**, which is what the Page tab's coverage count and orphan
   mark are waiting on.
