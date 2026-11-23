@@ -42,9 +42,58 @@ Two consequences worth stating, because both have been got wrong:
   `SelectField` take it; `ReadonlyField` and `valueField` do not. So an empty
   translation is never an error, and "empty" is never red.
 
+## Three sections
+
+The panel answers three questions, and each gets a tab:
+
+```
+Translation      the key that is open
+Page        9    everything the page is holding
+Log              what each step actually did
+```
+
+- **The bar is the only navigation.** No section is stacked below another, and
+  nothing scrolls off the bottom to be found by accident.
+- **The count on Page is the scan's**, not a filter's: how many Markers the last
+  scan found. It is absent before the first scan.
+- **Opening a translation brings Translation forward.** A click on the page, or
+  on a Page row, is a statement about what the Editor wants to look at.
+- **A failure marks the Log tab; it never switches to it.** A failed save is
+  read beside the draft that caused it. Reading the Log clears the mark.
+- **The Page list keeps its place.** Its search, scope and order are about the
+  page, so a key opening does not reset them — unlike the Translation toolbar's
+  search and Field filters, which are about one key.
+
+The bar is one stop in the Tab order: the arrows move inside it.
+
+### The Page tab
+
+One row per Marker, in document order, in two groups: **Visible on the page**
+and **Not visible** (the translations that live in an attribute). A row carries
+the text the page is showing, its key, and only what is already known:
+
+| On a row | Where it comes from |
+| --- | --- |
+| text, or `—` | the scan |
+| key | the scan |
+| `Shared` | `isSharedKey(key)` |
+| `aria-label`, `placeholder`, … | the scan |
+| violet dot | `PanelState.unsavedKeys` |
+
+Pointing at a row finds it on the page: a Hidden translation is flashed,
+because it has nothing to look at; a visible one is already outlined, so it is
+only brought into view. Clicking a row opens it exactly as a click on the page
+would.
+
+**What the Page tab deliberately does not show.** The design board carried a
+`3/5` coverage count, an `orphan` badge and a `Missing` scope. All three need
+the stored row of every key on the page, and the contract has one values
+endpoint per key: showing them would mean a request per Marker on every scan.
+They stay out until a bulk read exists.
+
 ## Anatomy
 
-Every Translation view is the same five blocks in the same order. Blocks 1, 2
+The Translation tab is the same five blocks in the same order. Blocks 1, 2
 and 5 never vary. What the Schema changes is listed beside blocks 3 and 4 and
 nowhere else.
 
@@ -258,11 +307,15 @@ Landed:
 - The token file, the five-block anatomy, the group, the Field treatments and
   the Locale label line.
 
+- The three tabs and the Page list. The inventory needed no Core change: the
+  Page Host already sees every scan through `onScan`, so it publishes the whole
+  list itself as `page-markers`. `PanelState.hidden` still carries the Core's
+  Hidden subset and stands in until the first scan is reported.
+
 Not landed yet:
 
-- **The language picker** needs an allow-list on `visibleLocales()` in the
-  Core, and somewhere to remember the Editor's choice per Site.
-- **Tabs, and the Page tab** — a list of every marked translation on the page —
-  need a Core surface that exposes the scanner's full inventory. Today
-  `PanelState.hidden` carries attribute-only Markers, which is a subset.
+- **Per-Site memory for the language picker.** The chosen set lives for the
+  panel's lifetime only.
 - **The accent outline** needs the `DEFAULT_COLORS` change in the Core.
+- **A bulk values read**, which is what the Page tab's coverage count and orphan
+  mark are waiting on.

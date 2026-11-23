@@ -50,6 +50,73 @@ ul {
   font-weight: 600;
 }
 
+/* ------------------------------------------------------------------ */
+/* The tab bar                                                         */
+/* ------------------------------------------------------------------ */
+
+.tabs {
+  display: flex;
+  align-items: stretch;
+  flex: 0 0 auto;
+  height: 42px;
+  padding: 0 8px;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 10px;
+  border: 0;
+  /* The current tab is underlined, so switching moves nothing else. */
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--size-base);
+  font-weight: 400;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab[data-current="true"] {
+  border-bottom-color: var(--primary);
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* How many translations the page holds. Filled in on the current tab, quiet beside an inactive one. */
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: var(--size-caption);
+  font-weight: 500;
+}
+
+.tab[data-current="true"] .tab-count {
+  background: var(--primary);
+  color: var(--primary-text);
+}
+
+/* Something failed while another section was on screen. */
+.tab[data-flagged="true"]::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+}
+
 .editor {
   flex: 1;
   min-height: 0;
@@ -579,21 +646,232 @@ h3 {
   font-size: var(--size-caption);
 }
 
-.hidden-list {
-  padding: 8px var(--gutter);
-  border-top: 1px solid var(--border);
+/* ------------------------------------------------------------------ */
+/* The Page list                                                       */
+/* ------------------------------------------------------------------ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
-.hidden-list h3 {
-  margin-bottom: 4px;
+/* The address being edited, and what of it is unsaved. */
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 12px var(--gutter) 10px;
 }
 
-.hidden-list ul {
-  max-height: 220px;
+.page-url {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: var(--size-small);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-unsaved {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 18px;
+  padding: 0 6px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-pill);
+  background: var(--accent-tint);
+  color: var(--accent-strong);
+  font-size: var(--size-caption);
+  font-weight: 500;
+}
+
+.page-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 0 var(--gutter) 10px;
+}
+
+/* Two counts of what is already on screen, as one segmented control. */
+.page-scopes {
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+  padding: 2px;
+  gap: 2px;
+  border-radius: var(--radius-group);
+  background: var(--surface-sunken);
+}
+
+.page-scope {
+  flex: 1 1 auto;
+  height: auto;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--size-small);
+  font-weight: 400;
+}
+
+.page-scope[data-current="true"] {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* One group: a box to type in, and the order as its trailing addon. */
+.page-find {
+  display: flex;
+  align-items: stretch;
+  height: var(--control-height);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-group);
+  overflow: hidden;
+}
+
+.page-find:focus-within {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 var(--ring) var(--accent-ring);
+}
+
+.page-find [data-role="page-search"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.page-sort {
+  width: auto;
+  height: 100%;
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: var(--size-field);
+}
+
+.page-list {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
-[data-role="hidden-attribute"] {
+/* A group heading, with the rule that separates it from the rows above. */
+.page-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px var(--gutter) 4px;
+}
+
+[data-role="page-group-name"] {
+  color: var(--text-subtle);
+  font-size: var(--size-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+[data-role="page-group-count"] {
+  color: var(--text-subtle);
+  font-size: var(--size-caption);
+}
+
+/* The rule that carries the heading across to the edge. */
+.page-group::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--surface-sunken);
+}
+
+.page-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  width: 100%;
+  height: auto;
+  padding: 8px var(--gutter);
+  border: 0;
+  /* The open key's row is marked on its edge, so the text keeps its place. */
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  font-weight: 400;
+  text-align: left;
+}
+
+.page-item:hover {
+  background: var(--surface-raised);
+}
+
+.page-item[data-current="true"] {
+  border-left-color: var(--accent);
+  background: var(--accent-tint);
+}
+
+.page-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+[data-role="page-text"],
+[data-role="page-key"] {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-role="page-text"] {
+  font-size: var(--size-base);
+}
+
+.page-item[data-current="true"] [data-role="page-text"] {
+  font-weight: 500;
+}
+
+[data-role="page-key"] {
+  margin-top: 2px;
+  color: var(--text-subtle);
+  font-size: var(--size-caption);
+}
+
+.page-item[data-current="true"] [data-role="page-key"] {
+  color: var(--accent-strong);
+}
+
+.page-marks {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding-top: 2px;
+}
+
+[data-role="page-shared"] {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-size: var(--size-caption);
+  font-weight: 500;
+}
+
+[data-role="page-attribute"] {
   padding: 0 4px;
   border-radius: var(--radius-control);
   background: var(--surface-sunken);
@@ -602,21 +880,48 @@ h3 {
   font-size: var(--size-caption);
 }
 
-.diagnostics {
-  padding: 6px var(--gutter);
-  border-top: 1px solid var(--border);
+/* Unsaved edits on this key. The one dot in the panel, so it needs no legend beyond the footer's. */
+.page-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
 }
 
-.diagnostics summary {
-  color: var(--text-subtle);
+[data-role="page-state"] {
+  padding: 8px var(--gutter);
+  color: var(--text-muted);
   font-size: var(--size-small);
-  cursor: pointer;
+}
+
+/* What the two marks mean, where they are being read. */
+.page-foot {
+  flex: 0 0 auto;
+  padding: 9px var(--gutter) 12px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: var(--size-small);
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------------ */
+/* The Log                                                             */
+/* ------------------------------------------------------------------ */
+
+.log-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 10px var(--gutter) var(--gutter);
 }
 
 .log-actions {
   display: flex;
   gap: 6px;
-  margin: 6px 0;
+  flex: 0 0 auto;
+  margin: 0 0 8px;
 }
 
 .log-actions button {
@@ -625,7 +930,8 @@ h3 {
 }
 
 [data-role="log"] {
-  max-height: 220px;
+  flex: 1;
+  min-height: 0;
   margin: 0;
   padding: 8px;
   overflow: auto;

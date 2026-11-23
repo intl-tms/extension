@@ -30,6 +30,44 @@ export const SIGN_IN = {
   editingAs: (name: string) => `Editing as ${name}`,
 } as const;
 
+/**
+ * The Side Panel's sections. Three, because the panel answers three questions:
+ * what is this translation, what else is on this page, and what just happened.
+ */
+export const TABS = {
+  label: "Panel sections",
+  translation: "Translation",
+  page: "Page",
+  log: "Log",
+  /** Why the Log tab is marked. */
+  logFlagged: "something failed",
+} as const;
+
+/**
+ * The Page list: every marked translation the page is holding. Everything here
+ * is derived from the scan and the panel's own drafts — nothing is read from
+ * the website, so there is no count of stored languages and no orphan mark.
+ */
+export const PAGE = {
+  urlLabel: "The page being edited",
+  unsaved: (count: number) => `${count} unsaved`,
+  scopeLabel: "Which translations to show",
+  scopeAll: (count: number) => `All ${count}`,
+  scopeUnsaved: (count: number) => `Unsaved ${count}`,
+  searchPlaceholder: "Search text or key…",
+  searchLabel: "Search translations on this page",
+  sortLabel: "Sort",
+  sortPage: "Page order",
+  sortKey: "By key",
+  groupVisible: "Visible on the page",
+  groupHidden: "Not visible",
+  /** On the dot that marks a key with unsaved edits, for anything that cannot see it. */
+  unsavedMark: "unsaved edits",
+  none: "Nothing marked on this page. Switch edit mode on, or reload the page.",
+  noMatch: "No translation on this page matches that.",
+  footer: "Point at a row to find it on the page, click to edit it. A violet dot means unsaved edits.",
+} as const;
+
 /** Side Panel. */
 export const PANEL = {
   placeholder: "Hold Alt (Option on a Mac) and click a highlighted translation on the page to edit it.",
@@ -77,13 +115,11 @@ export const PANEL = {
   usedOnNone: "No other pages recorded yet.",
   usedOnCount: (count: number) => `×${count}`,
   usedOnNewTab: "↗ new tab",
-  hiddenTitle: "Hidden on this page",
   hiddenTooltip: (attribute: string, key: string) => `${attribute} · ${key}`,
 } as const;
 
-/** Diagnostics: the pane and what is logged. */
+/** The Log: the pane and what is logged. */
 export const DIAGNOSTICS = {
-  title: "Diagnostics",
   copy: "Copy",
   clear: "Clear",
   copied: "Copied",

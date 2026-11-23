@@ -11,7 +11,7 @@ import {
   type Found,
   type RequestFn,
 } from "@intl-tms/core/tools";
-import { dispatch, failedSave, message, parseFor, type ConfigSlice, type Kind, type Message, type PageStatus, type Payloads } from "../shared/protocol.js";
+import { dispatch, failedSave, message, parseFor, type ConfigSlice, type Kind, type Message, type PageMarker, type PageStatus, type Payloads } from "../shared/protocol.js";
 import type { SignInStatus } from "../shared/sign-in.js";
 import { readSettings } from "../shared/storage.js";
 import { CONFIG_REASONS, CONSOLE } from "../shared/strings.js";
@@ -164,6 +164,10 @@ export function createPageHost(options: PageHostOptions): PageHost {
   const pageId = Math.random().toString(36).slice(2, 8);
   let status: PageStatus | undefined;
   let lastStatus = "";
+  /** Everything the last scan found, by Marker identity: what the Page list's rows point at. */
+  let markers = new Map<string, Found>();
+  const NO_MARKERS = "";
+  let lastMarkers = NO_MARKERS;
 
   // Fire and forget, and never throws: a closed panel, a starting Worker and
   // an Extension torn down mid-send are all normal.
@@ -265,9 +269,78 @@ export function createPageHost(options: PageHostOptions): PageHost {
     return resolveLocale(declared, config?.locales ?? []);
   }
 
+  /** The address the Markers were found on, or nothing when it cannot be read. */
+  function here(): string | undefined {
+    try {
+      return normalizeUrl(document.location.href);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Publishes the whole inventory of a scan, in document order, so the panel's
+   * Page list can show what is on the page. The Core publishes the Hidden
+   * subset itself; this is the rest of it, which only a Host that sees every
+   * scan can send. Sent only when it changed, values included: saving a
+   * translation changes nothing else, and the list must show what was saved.
+   */
+  function publishMarkers(found: readonly Found[]): void {
+    markers = new Map(found.map((item) => [item.id, item]));
+    const items: PageMarker[] = found.map((item) => ({
+      id: item.id,
+      key: item.key,
+      value: item.value,
+      ...(item.kind === "attribute" ? { attribute: item.attribute } : {}),
+    }));
+    const url = here();
+    const payload = { ...(url === undefined ? {} : { url }), items };
+    const signature = JSON.stringify(payload);
+    if (signature === lastMarkers) return;
+    lastMarkers = signature;
+    send("page-markers", payload);
+  }
+
+  /** A Marker the last scan saw, as long as its element is still in the page. */
+  function marker(id: string): Found | undefined {
+    const found = markers.get(id);
+    return found === undefined || !found.element.isConnected ? undefined : found;
+  }
+
+  /**
+   * Finds a Marker on the page. A Hidden translation has no visible text, so
+   * only the Core's flash locates it; a visible one is already outlined, and
+   * all that is left is to bring it into view.
+   */
+  function find(id: string): void {
+    const found = marker(id);
+    if (found === undefined || found.kind === "attribute") {
+      session.flashHidden(id);
+      return;
+    }
+    found.element.scrollIntoView?.({ block: "center", behavior: "smooth" });
+  }
+
+  /**
+   * Opens a Marker for editing. The Core holds the selection and refuses a save
+   * for a key it did not open, so a visible translation is opened the only way
+   * there is: the gesture it would have taken on the page. The Core's own
+   * listener prevents the page's default and stops the event where it stands.
+   */
+  function openMarker(id: string): void {
+    const found = marker(id);
+    if (found === undefined) return;
+    if (found.kind === "attribute") {
+      session.openHidden(id);
+      return;
+    }
+    found.element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, composed: true, altKey: true }));
+  }
+
   function onScan(found: readonly Found[]): void {
     const hidden = found.filter((item) => item.kind === "attribute").length;
     report({ marked: found.length > 0, found: { text: found.length - hidden, hidden } });
+    publishMarkers(found);
     try {
       const title = strip(document.title);
       // Nothing waits on a report, and a failure never affects highlighting.
@@ -378,6 +451,9 @@ export function createPageHost(options: PageHostOptions): PageHost {
     client.resetUsage();
     // The session stops silently, and the panel is still open beside a page that now has nothing to edit.
     send("hidden-changed", { items: [] });
+    markers = new Map();
+    lastMarkers = NO_MARKERS;
+    send("page-markers", { items: [] });
     report({ gate: "off" });
   }
 
@@ -509,11 +585,11 @@ export function createPageHost(options: PageHostOptions): PageHost {
             return false;
           },
           flash: ({ payload }) => {
-            if (active) session.flashHidden(payload.id);
+            if (active) find(payload.id);
             return false;
           },
-          "open-hidden": ({ payload }) => {
-            if (active) session.openHidden(payload.id);
+          "open-marker": ({ payload }) => {
+            if (active) openMarker(payload.id);
             return false;
           },
         },

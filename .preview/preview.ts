@@ -68,6 +68,21 @@ driver.setUsage(
 
 driver.setHidden([{ id: "a1:aria-label", attribute: "aria-label", key: "icon.close", value: "Close" }]);
 
+driver.setMarkers(
+  [
+    { id: "t1", key: "shared.actions.saveAll", value: "Gem alle ændringer" },
+    { id: "t2", key: "checkout.empty.title", value: "Din indkøbskurv er tom" },
+    { id: "t3", key: "shared.actions.pay", value: "Fortsæt til betaling" },
+    { id: "t4", key: "checkout.summary.heading", value: "Ordreoversigt" },
+    { id: "t5", key: "checkout.giftcard.apply", value: "Brug gavekort" },
+    { id: "t6", key: "checkout.delivery.note", value: "" },
+    { id: "a1:aria-label", key: "common.actions.close", value: "Luk", attribute: "aria-label" },
+    { id: "a2:placeholder", key: "checkout.discount.placeholder", value: "Indtast din rabatkode", attribute: "placeholder" },
+    { id: "a3:alt", key: "checkout.card.alt", value: "Kreditkort", attribute: "alt" },
+  ],
+  "localhost:3000/da/checkout",
+);
+
 // Type into Danish so the "edited" cue and a dirty Save are on screen.
 const danish = container.querySelector<HTMLTextAreaElement>('[data-role="control"][data-locale="da"][data-column="value"]');
 if (danish !== null) {

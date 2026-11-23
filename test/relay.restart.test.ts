@@ -62,9 +62,9 @@ describe("a fresh relay over a previous Worker's session store", () => {
     expect(w.toTabs.map((sent) => sent.tab)).toEqual([7]);
   });
 
-  it("RS8 forwards open-hidden to tab 7", async () => {
+  it("RS8 forwards open-marker to tab 7", async () => {
     const w = await restarted();
-    await w.deliver("open-hidden", { id: "a1:aria-label" }, panel);
+    await w.deliver("open-marker", { id: "a1:aria-label" }, panel);
     expect(w.toTabs.map((sent) => sent.tab)).toEqual([7]);
   });
 

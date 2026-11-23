@@ -49,6 +49,21 @@ export interface PageStatus {
   signIn?: SignInStatus;
 }
 
+/**
+ * One marked translation the page is holding: a row of the Page list. The
+ * whole inventory of a scan, not the Hidden subset — a translation that is the
+ * text of an element carries no `attribute`.
+ */
+export interface PageMarker {
+  /** The Marker's identity, as the Core's scanner assigned it: stable for as long as the node lives. */
+  id: string;
+  key: string;
+  /** The text on the page, Markers stripped. */
+  value: string;
+  /** The attribute it lives in. Absent for a translation that is an element's text. */
+  attribute?: string;
+}
+
 /** The reply to panel-ready: the stashed Selection with the tab and Site it belongs to, or nothing. */
 export interface PanelSeed {
   tab: number;
@@ -68,6 +83,8 @@ export interface Payloads {
   "config-loaded": { config?: Partial<ConfigSlice> };
   /** The page's Hidden list changed. `items` defaults to an empty list. */
   "hidden-changed": { items?: HiddenItem[] };
+  /** Everything the page's last scan found, and the address it was found on. `items` defaults to an empty list. */
+  "page-markers": { url?: string; items?: PageMarker[] };
   /** The page's status changed. Stashed by the Worker, and read by the Popup. */
   "status-changed": { status: PageStatus };
   /** The sign-in state of a tab's page changed. Relayed to the panel only when it changes. Validated by the receiver. */
@@ -78,10 +95,10 @@ export interface Payloads {
   save: { key: string; values?: Record<string, LocaleWrite> };
   /** Send the page to an address. */
   navigate: { url: string };
-  /** Flash a Hidden item on the page, by its stable identity. */
+  /** Find a Marker on the page, by its stable identity: flash a Hidden one, bring a visible one into view. */
   flash: { id: string };
-  /** Open a Hidden item for editing, by its stable identity. */
-  "open-hidden": { id: string };
+  /** Open a Marker for editing, by its stable identity, exactly as a click on the page would. */
+  "open-marker": { id: string };
 }
 
 /** A message kind. */
@@ -108,15 +125,16 @@ export const RECEIVES = {
     "usage-loaded",
     "config-loaded",
     "hidden-changed",
+    "page-markers",
     "status-changed",
     "panel-ready",
     "save",
     "navigate",
     "flash",
-    "open-hidden",
+    "open-marker",
   ],
-  panel: ["selection-opened", "values-loaded", "usage-loaded", "config-loaded", "hidden-changed", "sign-in-changed"],
-  page: ["save", "navigate", "flash", "open-hidden"],
+  panel: ["selection-opened", "values-loaded", "usage-loaded", "config-loaded", "hidden-changed", "page-markers", "sign-in-changed"],
+  page: ["save", "navigate", "flash", "open-marker"],
 } as const satisfies Record<Destination, readonly Kind[]>;
 
 /** The kinds a context receives. */
@@ -166,6 +184,7 @@ const VALID: { [K in Kind]: (payload: Loose) => boolean } = {
   "usage-loaded": (p) => hasKey(p) && optional(p.usages, Array.isArray),
   "config-loaded": (p) => optional(p.config, isObject),
   "hidden-changed": (p) => optional(p.items, Array.isArray),
+  "page-markers": (p) => optional(p.items, Array.isArray) && optional(p.url, (url) => typeof url === "string"),
   "status-changed": (p) => isObject(p.status),
   "sign-in-changed": (p) => optional(p.status, isObject),
   "panel-ready": () => true,
@@ -173,7 +192,7 @@ const VALID: { [K in Kind]: (payload: Loose) => boolean } = {
   // The address ends in a navigation of the page, where a script-scheme address would run code.
   navigate: (p) => typeof p.url === "string" && isHttpUrl(p.url),
   flash: hasId,
-  "open-hidden": hasId,
+  "open-marker": hasId,
 };
 
 /**

@@ -7,10 +7,10 @@ import { RECEIVES, type Handlers } from "../src/shared/protocol.js";
 
 const ignore = () => undefined;
 
-export const completePage: Handlers<"page", void> = { save: ignore, navigate: ignore, flash: ignore, "open-hidden": ignore };
+export const completePage: Handlers<"page", void> = { save: ignore, navigate: ignore, flash: ignore, "open-marker": ignore };
 
 // @ts-expect-error a page handler table without `flash` is incomplete
-export const incompletePage: Handlers<"page", void> = { save: ignore, navigate: ignore, "open-hidden": ignore };
+export const incompletePage: Handlers<"page", void> = { save: ignore, navigate: ignore, "open-marker": ignore };
 
 // @ts-expect-error a panel handler table without `hidden-changed` is incomplete
 export const incompletePanel: Handlers<"panel", void> = {

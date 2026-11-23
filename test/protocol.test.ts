@@ -54,7 +54,7 @@ describe("protocol", () => {
   });
 
   it("ignores a Hidden item reference that is not text", () => {
-    expect(parseFor("page", { to: "page", kind: "open-hidden", payload: { id: 0 } })).toBeUndefined();
+    expect(parseFor("page", { to: "page", kind: "open-marker", payload: { id: 0 } })).toBeUndefined();
   });
 
   it("ignores a selection announcement without a key", () => {

@@ -5,6 +5,7 @@ import {
   explainSaveFailure,
   fieldText,
   hiddenErrors,
+  isSharedKey,
   relativeTime,
   resolveToolbarFilters,
   shouldRenderToolbar,
@@ -18,7 +19,8 @@ import {
 import type { FieldDef } from "@intl-tms/core";
 import { languageName } from "../shared/language.js";
 import { editingAs } from "../shared/sign-in.js";
-import { DIAGNOSTICS, PANEL, PRODUCT } from "../shared/strings.js";
+import type { PageMarker } from "../shared/protocol.js";
+import { DIAGNOSTICS, PAGE, PANEL, PRODUCT, TABS } from "../shared/strings.js";
 import type { PanelCallbacks, PanelDriver } from "./controller.js";
 import { createLog, type Log } from "./log.js";
 
@@ -45,6 +47,17 @@ export interface PanelViewOptions {
 }
 
 type Control = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
+/** The panel's three sections. */
+type TabName = "translation" | "page" | "log";
+
+/** Which of the page's translations the Page list shows. Both are counted from what is already on screen. */
+type PageScope = "all" | "unsaved";
+
+/** The order of the Page list: the order the page holds them in, or by key. */
+type PageSort = "page" | "key";
+
+const TAB_ORDER: readonly TabName[] = ["translation", "page", "log"];
 
 const VALUE = "value";
 
@@ -81,6 +94,17 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
    */
   let chosen: Set<string> | undefined;
   let languageSearch = "";
+  /** Which section is on screen. The panel's own, and never reset: a key opening is not a reason to leave the Page list. */
+  let tab: TabName = "translation";
+  /** Something failed while another section was on screen: the Log tab says so until it is read. */
+  let flagged = false;
+  /** The Page list's own narrowing, which is about the page and so survives a key opening. */
+  let pageSearch = "";
+  let pageScope: PageScope = "all";
+  let pageSort: PageSort = "page";
+  /** What the page's last scan found, and where. Empty until a scan is reported. */
+  let markers: readonly PageMarker[] = [];
+  let markersUrl: string | undefined;
 
   function element<K extends keyof HTMLElementTagNameMap>(tag: K, role?: string, text?: string): HTMLElementTagNameMap[K] {
     const created = document.createElement(tag);
@@ -93,8 +117,12 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
   // Saving: the one seam that sees both the store's writes and the reply.
   // ---------------------------------------------------------------------
 
+  // Something failed. The Editor is told where to look rather than being moved
+  // there: a failed save is read beside the draft that caused it.
   const failure = () => {
-    diagnostics.open = true;
+    if (tab === "log") return;
+    flagged = true;
+    paintTabs();
   };
 
   async function persist(changes: Record<string, PanelWrite>): Promise<PersistOutcome | undefined> {
@@ -138,6 +166,49 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
   const heading = element("h1", undefined, PRODUCT.name);
   if (options.version !== undefined) heading.append(element("span", "version", options.version));
   header.append(heading, editingAsLine);
+
+  /*
+   * The tab bar. Three buttons and three panes: a tab is a disclosure that
+   * remembers, so the panel can be scrolled to a Field without losing the Page
+   * list's place, and nothing is ever stacked below the editor off screen.
+   */
+  const tabs = element("div", "tabs");
+  tabs.className = "tabs";
+  tabs.setAttribute("role", "tablist");
+  tabs.setAttribute("aria-label", TABS.label);
+
+  function buildTab(name: TabName, label: string): HTMLButtonElement {
+    const button = element("button", "tab");
+    button.type = "button";
+    button.className = "tab";
+    button.id = nextId();
+    button.dataset.tab = name;
+    button.setAttribute("role", "tab");
+    button.append(element("span", "tab-label", label));
+    button.addEventListener("click", () => show(name));
+    return button;
+  }
+
+  const translationTab = buildTab("translation", TABS.translation);
+  const pageTab = buildTab("page", TABS.page);
+  // How many translations the page is holding: the one number the bar carries.
+  const pageTabCount = element("span", "tab-count");
+  pageTabCount.className = "tab-count";
+  pageTabCount.hidden = true;
+  pageTab.append(pageTabCount);
+  const logTab = buildTab("log", TABS.log);
+  tabs.append(translationTab, pageTab, logTab);
+
+  // A tablist is one stop: the arrows move between the tabs, not the Tab key.
+  tabs.addEventListener("keydown", (event) => {
+    const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+    if (step === 0) return;
+    event.preventDefault();
+    const next = TAB_ORDER[(TAB_ORDER.indexOf(tab) + step + TAB_ORDER.length) % TAB_ORDER.length];
+    if (next === undefined) return;
+    show(next);
+    buttonOf(next).focus();
+  });
 
   const editor = element("section", "editor");
   editor.className = "editor";
@@ -260,14 +331,85 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
   selection.append(title, keyLine, sharedNotice, description, section, toolbar, toolbarHint, rows, actions, status, usedOn);
   editor.append(placeholder, selection);
 
-  const hidden = element("section", "hidden");
-  hidden.className = "hidden-list";
-  hidden.hidden = true;
-  const hiddenBody = element("ul");
-  hidden.append(element("h3", undefined, PANEL.hiddenTitle), hiddenBody);
+  /*
+   * The Page pane: the address being edited, what to show of it, and one row
+   * per Marker. Everything in it is derived from the scan and from the panel's
+   * own drafts, so it costs no request and can never be out of step with the
+   * page.
+   */
+  const page = element("section", "page");
+  page.className = "page";
 
-  const diagnostics = element("details", "diagnostics");
-  diagnostics.className = "diagnostics";
+  const pageHead = element("div");
+  pageHead.className = "page-head";
+  const pageUrl = element("code", "page-url");
+  pageUrl.className = "page-url";
+  pageUrl.setAttribute("aria-label", PAGE.urlLabel);
+  const pageUnsaved = element("span", "page-unsaved");
+  pageUnsaved.className = "page-unsaved";
+  pageUnsaved.hidden = true;
+  pageHead.append(pageUrl, pageUnsaved);
+
+  const pageTools = element("div");
+  pageTools.className = "page-tools";
+  const pageScopes = element("div", "page-scopes");
+  pageScopes.className = "page-scopes";
+  pageScopes.setAttribute("role", "group");
+  pageScopes.setAttribute("aria-label", PAGE.scopeLabel);
+
+  function buildScope(name: PageScope): HTMLButtonElement {
+    const button = element("button", "page-scope");
+    button.type = "button";
+    button.className = "page-scope";
+    button.dataset.scope = name;
+    button.addEventListener("click", () => {
+      pageScope = name;
+      paintPage();
+    });
+    return button;
+  }
+
+  const scopeAll = buildScope("all");
+  const scopeUnsaved = buildScope("unsaved");
+  pageScopes.append(scopeAll, scopeUnsaved);
+
+  // One bordered group: a box to type in, and the order as its trailing addon.
+  const pageFind = element("div");
+  pageFind.className = "page-find";
+  const pageSearchBox = element("input", "page-search");
+  pageSearchBox.type = "search";
+  pageSearchBox.placeholder = PAGE.searchPlaceholder;
+  pageSearchBox.setAttribute("aria-label", PAGE.searchLabel);
+  pageSearchBox.addEventListener("input", () => {
+    pageSearch = pageSearchBox.value;
+    paintPage();
+  });
+  const pageSortBox = element("select", "page-sort");
+  pageSortBox.className = "page-sort";
+  pageSortBox.setAttribute("aria-label", PAGE.sortLabel);
+  for (const [value, label] of [
+    ["page", PAGE.sortPage],
+    ["key", PAGE.sortKey],
+  ] as [PageSort, string][]) {
+    const option = element("option", undefined, label);
+    option.value = value;
+    pageSortBox.append(option);
+  }
+  pageSortBox.addEventListener("change", () => {
+    pageSort = pageSortBox.value === "key" ? "key" : "page";
+    paintPage();
+  });
+  pageFind.append(pageSearchBox, pageSortBox);
+  pageTools.append(pageScopes, pageFind);
+
+  const pageList = element("div", "page-list");
+  pageList.className = "page-list";
+  const pageFoot = element("p", "page-foot", PAGE.footer);
+  pageFoot.className = "page-foot";
+  page.append(pageHead, pageTools, pageList, pageFoot);
+
+  const logSection = element("section", "diagnostics");
+  logSection.className = "log-pane";
   const copyButton = element("button", "copy", DIAGNOSTICS.copy);
   copyButton.type = "button";
   const clearButton = element("button", "clear", DIAGNOSTICS.clear);
@@ -277,9 +419,53 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
   logButtons.append(copyButton, clearButton);
   const logPane = element("pre", "log");
   logPane.tabIndex = 0;
-  diagnostics.append(element("summary", undefined, DIAGNOSTICS.title), logButtons, logPane);
+  logSection.append(logButtons, logPane);
 
-  container.replaceChildren(header, editor, hidden, diagnostics);
+  const panes: readonly [TabName, HTMLElement][] = [
+    ["translation", editor],
+    ["page", page],
+    ["log", logSection],
+  ];
+  const buttons: readonly [TabName, HTMLButtonElement][] = [
+    ["translation", translationTab],
+    ["page", pageTab],
+    ["log", logTab],
+  ];
+  const buttonOf = (name: TabName): HTMLButtonElement => buttons.find(([candidate]) => candidate === name)?.[1] ?? translationTab;
+
+  for (const [name, pane] of panes) {
+    pane.id = nextId();
+    pane.setAttribute("role", "tabpanel");
+    pane.setAttribute("aria-labelledby", buttonOf(name).id);
+    buttonOf(name).setAttribute("aria-controls", pane.id);
+  }
+
+  /** Brings a section on screen. Reading the Log is what clears its mark. */
+  function show(next: TabName): void {
+    tab = next;
+    if (next === "log") flagged = false;
+    paintTabs();
+    // The Page list counts drafts, which change on every keystroke: it is built
+    // when it comes on screen rather than under the Editor's hands.
+    if (next === "page") paintPage();
+  }
+
+  /** Which tab is current, which pane is on screen, and the two things the bar counts. */
+  function paintTabs(): void {
+    for (const [name, button] of buttons) {
+      const current = name === tab;
+      button.dataset.current = String(current);
+      button.setAttribute("aria-selected", String(current));
+      // A tablist is one stop in the Tab order; the arrows move inside it.
+      button.tabIndex = current ? 0 : -1;
+    }
+    logTab.dataset.flagged = String(flagged);
+    if (flagged) logTab.title = TABS.logFlagged;
+    else logTab.removeAttribute("title");
+    for (const [name, pane] of panes) pane.hidden = name !== tab;
+  }
+
+  container.replaceChildren(header, tabs, editor, page, logSection);
 
   // ---------------------------------------------------------------------
   // Rows
@@ -780,29 +966,104 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
     usedOnBody.replaceChildren(list);
   }
 
-  function paintHidden(): void {
-    const items = store.getState().hidden;
-    hidden.hidden = items.length === 0;
-    hiddenBody.replaceChildren(
-      ...items.map((item) => {
-        const row = element("button", "hidden-item");
-        row.type = "button";
-        row.title = PANEL.hiddenTooltip(item.attribute, item.key);
-        row.append(
-          element("span", "hidden-attribute", item.attribute),
-          " ",
-          element("span", "hidden-value", item.value),
-          " ",
-          element("code", "hidden-key", item.key),
-        );
-        // Pointing at a row finds an element that has no visible text.
-        row.addEventListener("mouseenter", () => callbacks.flash(item.id));
-        row.addEventListener("click", () => callbacks.openHidden(item.id));
-        const entry = element("li");
-        entry.append(row);
-        return entry;
-      }),
+  /**
+   * The page's inventory: everything the last scan found. The Core publishes
+   * the Hidden subset on its own, so that stands in until a scan is reported —
+   * a panel seeded after the fact has one and not yet the other.
+   */
+  const inventory = (state: PanelState): readonly PageMarker[] =>
+    markers.length > 0
+      ? markers
+      : state.hidden.map((item) => ({ id: item.id, key: item.key, value: item.value, attribute: item.attribute }));
+
+  /** One row of the Page list: what the page says, what key says it, and what is true of the key. */
+  function buildPageItem(item: PageMarker, current: boolean, unsaved: boolean): HTMLElement {
+    const row = element("button", "page-item");
+    row.type = "button";
+    row.className = "page-item";
+    row.dataset.id = item.id;
+    row.dataset.key = item.key;
+    row.dataset.current = String(current);
+    row.title = item.attribute === undefined ? item.key : PANEL.hiddenTooltip(item.attribute, item.key);
+
+    const body = element("span");
+    body.className = "page-body";
+    // A translation whose text is empty on the page still has a row: the dash says so.
+    body.append(element("span", "page-text", item.value === "" ? PANEL.emptyValue : item.value), element("code", "page-key", item.key));
+
+    const marks = element("span");
+    marks.className = "page-marks";
+    if (isSharedKey(item.key)) marks.append(element("span", "page-shared", PANEL.sharedBadge));
+    // Which attribute holds it, for a translation that has no text of its own.
+    if (item.attribute !== undefined) marks.append(element("code", "page-attribute", item.attribute));
+    if (unsaved) {
+      const dot = element("span", "page-dot");
+      dot.className = "page-dot";
+      dot.setAttribute("role", "img");
+      dot.setAttribute("aria-label", PAGE.unsavedMark);
+      marks.append(dot);
+    }
+
+    row.append(body, marks);
+    // Pointing at a row finds it on the page; activating it opens it, exactly as a click there would.
+    row.addEventListener("mouseenter", () => callbacks.flash(item.id));
+    row.addEventListener("click", () => callbacks.openMarker(item.id));
+    return row;
+  }
+
+  /** A group heading with its own count: the page's own split, not a filter. */
+  function buildPageGroup(label: string, count: number): HTMLElement {
+    const head = element("div", "page-group");
+    head.className = "page-group";
+    head.append(element("span", "page-group-name", label), element("span", "page-group-count", String(count)));
+    return head;
+  }
+
+  function paintPage(): void {
+    const state = store.getState();
+    const items = inventory(state);
+    const unsaved = new Set(state.unsavedKeys);
+    const openKey = state.selection?.key;
+
+    pageUrl.textContent = markersUrl ?? "";
+    pageUrl.hidden = markersUrl === undefined;
+    pageTabCount.textContent = String(items.length);
+    pageTabCount.hidden = items.length === 0;
+
+    const unsavedHere = items.filter((item) => unsaved.has(item.key));
+    pageUnsaved.textContent = PAGE.unsaved(unsavedHere.length);
+    pageUnsaved.hidden = unsavedHere.length === 0;
+    scopeAll.textContent = PAGE.scopeAll(items.length);
+    scopeUnsaved.textContent = PAGE.scopeUnsaved(unsavedHere.length);
+    for (const [name, button] of [
+      ["all", scopeAll],
+      ["unsaved", scopeUnsaved],
+    ] as [PageScope, HTMLButtonElement][]) {
+      button.setAttribute("aria-pressed", String(pageScope === name));
+      button.dataset.current = String(pageScope === name);
+    }
+
+    const needle = pageSearch.trim().toLowerCase();
+    const matching = items.filter(
+      (item) =>
+        (pageScope === "all" || unsaved.has(item.key)) &&
+        (needle === "" || item.key.toLowerCase().includes(needle) || item.value.toLowerCase().includes(needle)),
     );
+    const shown = pageSort === "key" ? [...matching].sort((left, right) => left.key.localeCompare(right.key)) : matching;
+    const row = (item: PageMarker) => buildPageItem(item, item.key === openKey, unsaved.has(item.key));
+
+    if (items.length === 0 || shown.length === 0) {
+      pageList.replaceChildren(element("p", "page-state", items.length === 0 ? PAGE.none : PAGE.noMatch));
+      return;
+    }
+    // Visible text first, then what lives in an attribute: the second group is
+    // the only part of a page an Editor cannot point at.
+    const visibleItems = shown.filter((item) => item.attribute === undefined);
+    const hiddenItems = shown.filter((item) => item.attribute !== undefined);
+    const parts: HTMLElement[] = [];
+    if (visibleItems.length > 0) parts.push(buildPageGroup(PAGE.groupVisible, visibleItems.length), ...visibleItems.map(row));
+    if (hiddenItems.length > 0) parts.push(buildPageGroup(PAGE.groupHidden, hiddenItems.length), ...hiddenItems.map(row));
+    pageList.replaceChildren(...parts);
   }
 
   function paintLog(): void {
@@ -844,6 +1105,7 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
       if (Object.keys(store.getState().conflicts).length > 0) paintRows();
       else paintGuard();
       paintStatus();
+      paintPage();
     });
   });
 
@@ -851,6 +1113,7 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
     store.cancel();
     paintRows();
     paintStatus();
+    paintPage();
   });
 
   copyButton.addEventListener("click", () => {
@@ -870,7 +1133,9 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
   clearButton.addEventListener("click", () => log.clear());
   log.subscribe(paintLog);
 
+  paintTabs();
   paintHeading();
+  paintPage();
   paintLog();
 
   // ---------------------------------------------------------------------
@@ -887,6 +1152,8 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
     open(openedKey, locale, onPageValue) {
       harvest();
       store.open(openedKey, locale, onPageValue);
+      // A translation was clicked: that is what the Editor is now looking at.
+      show("translation");
       log.add("open", DIAGNOSTICS.open(openedKey, locale), onPageValue);
       const { locales } = store.getState();
       // While no configuration has arrived there is nothing to compare against.
@@ -902,6 +1169,7 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
       paintRows();
       paintStatus();
       paintUsedOn();
+      paintPage();
     },
 
     setValues(valuesKey, values, error) {
@@ -935,7 +1203,13 @@ export function createPanelView(options: PanelViewOptions): PanelDriver {
 
     setHidden(items) {
       store.setHidden(items);
-      paintHidden();
+      paintPage();
+    },
+
+    setMarkers(items, url) {
+      markers = items;
+      markersUrl = url;
+      paintPage();
     },
   };
 }
