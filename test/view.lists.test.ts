@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { PANEL, hiddenItem, opened, panel, usage } from "./support/view.js";
+import { PANEL, opened, panel, usage } from "./support/view.js";
 
 const usedOn = (view: ReturnType<typeof panel>) => view.role("used-on")!;
 const usageRows = (view: ReturnType<typeof panel>) => view.roles<HTMLButtonElement>("usage");
@@ -97,78 +97,5 @@ describe("panel view: Used on", () => {
     const view = opened();
     view.driver.setUsage("hero.title", [usage("https://x.example/<img src=x onerror=alert(1)>")], false);
     expect(usedOn(view).querySelector("img")).toBeNull();
-  });
-});
-
-describe("panel view: Hidden on this page", () => {
-  const section = (view: ReturnType<typeof panel>) => view.role("hidden")!;
-  const hiddenRows = (view: ReturnType<typeof panel>) => view.roles<HTMLButtonElement>("hidden-item");
-
-  it("VL10 the section is not shown for an empty list", () => {
-    const view = panel();
-    expect(view.shown(section(view))).toBe(false);
-  });
-
-  it("is titled Hidden on this page", () => {
-    const view = panel();
-    view.driver.setHidden([hiddenItem]);
-    expect(section(view).querySelector("h3")?.textContent).toBe(PANEL.hiddenTitle);
-  });
-
-  it("VL11 a row shows the attribute name", () => {
-    const view = panel();
-    view.driver.setHidden([hiddenItem]);
-    expect(hiddenRows(view)[0]?.querySelector("[data-role=hidden-attribute]")?.textContent).toBe("aria-label");
-  });
-
-  it("VL12 a row shows the value", () => {
-    const view = panel();
-    view.driver.setHidden([hiddenItem]);
-    expect(hiddenRows(view)[0]?.querySelector("[data-role=hidden-value]")?.textContent).toBe("Close");
-  });
-
-  it("VL13 a row shows the key", () => {
-    const view = panel();
-    view.driver.setHidden([hiddenItem]);
-    expect(hiddenRows(view)[0]?.querySelector("[data-role=hidden-key]")?.textContent).toBe("icon.close");
-  });
-
-  it("a row's tooltip names the attribute and the key", () => {
-    const view = panel();
-    view.driver.setHidden([hiddenItem]);
-    expect(hiddenRows(view)[0]?.title).toBe("aria-label · icon.close");
-  });
-
-  it("VL14 the pointer entering a row calls flash with its reference", () => {
-    const view = panel();
-    view.driver.setHidden([hiddenItem]);
-    hiddenRows(view)[0]?.dispatchEvent(new MouseEvent("mouseenter"));
-    expect(view.callbacks.flash).toHaveBeenCalledWith("a1:aria-label");
-  });
-
-  it("VL15 activating a row calls open with its reference", () => {
-    const view = panel();
-    view.driver.setHidden([hiddenItem]);
-    hiddenRows(view)[0]?.click();
-    expect(view.callbacks.openHidden).toHaveBeenCalledWith("a1:aria-label");
-  });
-
-  it("a Hidden row is a button", () => {
-    const view = panel();
-    view.driver.setHidden([hiddenItem]);
-    expect(hiddenRows(view)[0]?.tagName).toBe("BUTTON");
-  });
-
-  it("VL16 the section disappears when the list becomes empty", () => {
-    const view = panel();
-    view.driver.setHidden([hiddenItem]);
-    view.driver.setHidden([]);
-    expect(view.shown(section(view))).toBe(false);
-  });
-
-  it("VL17 the section is shown with Hidden items and nothing selected", () => {
-    const view = panel();
-    view.driver.setHidden([hiddenItem]);
-    expect([view.shown(section(view)), view.shown(view.role("placeholder"))]).toEqual([true, true]);
   });
 });

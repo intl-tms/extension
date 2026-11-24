@@ -30,18 +30,80 @@ export const SIGN_IN = {
   editingAs: (name: string) => `Editing as ${name}`,
 } as const;
 
+/**
+ * The Side Panel's sections. Three, because the panel answers three questions:
+ * what is this translation, what else is on this page, and what just happened.
+ */
+export const TABS = {
+  label: "Panel sections",
+  translation: "Translation",
+  page: "Page",
+  log: "Log",
+  /** Why the Log tab is marked. */
+  logFlagged: "something failed",
+} as const;
+
+/**
+ * The Page list: every marked translation the page is holding. Everything here
+ * is derived from the scan and the panel's own drafts — nothing is read from
+ * the website, so there is no count of stored languages and no orphan mark.
+ */
+export const PAGE = {
+  urlLabel: "The page being edited",
+  unsaved: (count: number) => `${count} unsaved`,
+  scopeLabel: "Which translations to show",
+  scopeAll: (count: number) => `All ${count}`,
+  scopeUnsaved: (count: number) => `Unsaved ${count}`,
+  searchPlaceholder: "Search text or key…",
+  searchLabel: "Search translations on this page",
+  sortLabel: "Sort",
+  sortPage: "Page order",
+  sortKey: "By key",
+  groupVisible: "Visible on the page",
+  groupHidden: "Not visible",
+  /** On the dot that marks a key with unsaved edits, for anything that cannot see it. */
+  unsavedMark: "unsaved edits",
+  none: "Nothing marked on this page. Switch edit mode on, or reload the page.",
+  noMatch: "No translation on this page matches that.",
+  footer: "Point at a row to find it on the page, click to edit it. A violet dot means unsaved edits.",
+} as const;
+
 /** Side Panel. */
 export const PANEL = {
   placeholder: "Hold Alt (Option on a Mac) and click a highlighted translation on the page to edit it.",
   sharedBadge: "Shared",
   currentLocale: "on this page",
+  sourceLocale: "source",
+  dirtyCue: "edited",
+  emptyCue: "empty",
+  translationsTitle: "Translations",
+  /** The count beside the Translations heading. Empty is a normal state, so it is said plainly. */
+  localeCount: (total: number, empty: number) => `${total} ${total === 1 ? "language" : "languages"}${empty > 0 ? ` · ${empty} empty` : ""}`,
   searchPlaceholder: "Search locale or value…",
   searchLabel: "Search locales",
+  /** Which Locales are shown. The Editor's choice, so it is offered whatever the Schema declares. */
+  languages: "Languages",
+  languagesAll: (total: number) => `all ${total}`,
+  languagesSome: (shown: number, total: number) => `${shown} of ${total}`,
+  languagesSearch: "Filter languages…",
+  languagesSearchLabel: "Filter the language list",
+  languagesSetAll: (total: number) => `All ${total}`,
+  languagesSetNone: "None",
+  languagesSetEmpty: (count: number) => `Empty ${count}`,
+  languagesSetEdited: (count: number) => `Edited ${count}`,
+  languagesShown: (shown: number, hidden: number) => `${shown} shown · ${hidden} hidden`,
+  /** Why the Current Locale's checkbox cannot be cleared. */
+  languagesPinned: "Always shown: it is the language on this page",
   filterAll: "All",
   selectNone: "Select…",
-  required: "Required",
-  valueLabel: (locale: string) => `${locale} translation`,
-  fieldLabel: (locale: string, label: string) => `${locale} ${label}`,
+  required: "Required. Save is blocked.",
+  /** Marks a required Field on its label. The word is for anything that cannot see the mark. */
+  requiredMark: "*",
+  requiredMarkLabel: "required",
+  /** A Read-only Field the website has no value for. */
+  emptyValue: "—",
+  valueLabel: (language: string) => `${language} translation`,
+  fieldLabel: (language: string, label: string) => `${language} ${label}`,
   hintRequired: (locales: readonly string[]) => `Required field empty in hidden locale(s): ${list(locales)}`,
   hintTags: (locales: readonly string[]) => `Tags do not match the source in hidden locale(s): ${list(locales)}`,
   hintJoin: " · ",
@@ -53,13 +115,11 @@ export const PANEL = {
   usedOnNone: "No other pages recorded yet.",
   usedOnCount: (count: number) => `×${count}`,
   usedOnNewTab: "↗ new tab",
-  hiddenTitle: "Hidden on this page",
   hiddenTooltip: (attribute: string, key: string) => `${attribute} · ${key}`,
 } as const;
 
-/** Diagnostics: the pane and what is logged. */
+/** The Log: the pane and what is logged. */
 export const DIAGNOSTICS = {
-  title: "Diagnostics",
   copy: "Copy",
   clear: "Clear",
   copied: "Copied",

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { PersistOutcome } from "@intl-tms/core/tools";
 import { describe, expect, it } from "vitest";
-import { DIAGNOSTICS } from "../src/shared/strings.js";
+import { DIAGNOSTICS, TABS } from "../src/shared/strings.js";
 import { CONFIG, STATUS, opened, panel, settle } from "./support/view.js";
 
 type Answer = PersistOutcome | undefined | Error;
@@ -13,20 +13,28 @@ async function saved(answer?: Answer, view = opened(answer === undefined && argu
 }
 
 describe("Diagnostics: the pane", () => {
-  it("is titled Diagnostics", () => {
-    expect(panel().diagnostics().querySelector("summary")?.textContent).toBe(DIAGNOSTICS.title);
+  it("is reached from a tab named Log", () => {
+    expect(panel().tab("log").textContent).toBe(TABS.log);
   });
 
-  it("LG13 is collapsed in a fresh panel", () => {
-    expect(panel().diagnostics().open).toBe(false);
+  it("LG13 is not on screen, and not marked, in a fresh panel", () => {
+    const view = panel();
+    expect([view.shown(view.diagnostics()), view.tab("log").dataset.flagged]).toEqual([false, "false"]);
+  });
+
+  it("comes on screen when its tab is activated", () => {
+    const view = panel();
+    view.tab("log").click();
+    expect([view.shown(view.diagnostics()), view.current()]).toEqual([true, "log"]);
   });
 
   it("LG10 shows the invitation sentence while the log is empty", () => {
     expect(panel({ config: false }).role("log")?.textContent).toBe(DIAGNOSTICS.empty);
   });
 
-  it("is shown with nothing selected", () => {
+  it("is reachable with nothing selected", () => {
     const view = panel();
+    view.tab("log").click();
     expect(view.shown(view.diagnostics())).toBe(true);
   });
 
@@ -63,11 +71,12 @@ describe("Diagnostics: the pane", () => {
     expect(view.log.entries().at(-1)?.text).toBe("hero.title READ FAILED -- the panel is showing the on-page value only");
   });
 
-  it("LG17 the pane opens when values fail to load", () => {
+  it("LG17 the Log tab is marked when values fail to load", () => {
     const view = panel();
     view.driver.open("hero.title", "en", "Deploy now");
     view.driver.setValues("hero.title", { locales: {} }, true);
-    expect(view.diagnostics().open).toBe(true);
+    // The failure is said here, not shown: the Editor reads it beside the draft that caused it.
+    expect([view.tab("log").dataset.flagged, view.current()]).toEqual(["true", "translation"]);
   });
 
   it("LG18 logs a sent save's writes", async () => {
@@ -80,12 +89,12 @@ describe("Diagnostics: the pane", () => {
     expect([entry?.channel, entry?.text, JSON.parse(entry?.detail ?? "null").ok]).toEqual(["save", "saved", true]);
   });
 
-  it("LG19 the pane stays collapsed when a save succeeds", async () => {
-    expect((await saved()).diagnostics().open).toBe(false);
+  it("LG19 the Log tab stays unmarked when a save succeeds", async () => {
+    expect((await saved()).tab("log").dataset.flagged).toBe("false");
   });
 
-  it("LG20 the pane opens when a save fails", async () => {
-    expect((await saved({ ok: false, results: { da: { ok: false, status: 500 } } })).diagnostics().open).toBe(true);
+  it("LG20 the Log tab is marked when a save fails", async () => {
+    expect((await saved({ ok: false, results: { da: { ok: false, status: 500 } } })).tab("log").dataset.flagged).toBe("true");
   });
 
   it("logs a failed save on the save channel, then why", async () => {
@@ -131,8 +140,8 @@ describe("Diagnostics: the pane", () => {
     expect((await saved(new Error("port closed"))).log.entries().at(-1)).toMatchObject({ channel: "save", text: "THREW", detail: "port closed" });
   });
 
-  it("the pane opens when the callback throws", async () => {
-    expect((await saved(new Error("port closed"))).diagnostics().open).toBe(true);
+  it("the Log tab is marked when the callback throws", async () => {
+    expect((await saved(new Error("port closed"))).tab("log").dataset.flagged).toBe("true");
   });
 
   it("the panel is still usable after the callback throws", async () => {
@@ -143,12 +152,18 @@ describe("Diagnostics: the pane", () => {
     expect(view.status().textContent).toBe("da ✓");
   });
 
-  it("LG29 a pane opened by a failure is still open after a save succeeds", async () => {
+  it("LG29 a mark left by a failure survives a save that succeeds", async () => {
     let calls = 0;
     const view = opened({ answer: () => (calls++ === 0 ? undefined : { ok: true, results: { da: { ok: true } } }) });
     await saved(undefined, view);
     await view.press("save");
-    expect(view.diagnostics().open).toBe(true);
+    expect(view.tab("log").dataset.flagged).toBe("true");
+  });
+
+  it("reading the Log clears its mark", async () => {
+    const view = await saved({ ok: false, results: { da: { ok: false, status: 500 } } });
+    view.tab("log").click();
+    expect(view.tab("log").dataset.flagged).toBe("false");
   });
 
   it("LG30 Clear empties the log", async () => {

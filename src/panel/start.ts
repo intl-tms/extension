@@ -15,7 +15,9 @@ export function startPanel(api: PanelApi, container: HTMLElement): void {
     send: (outgoing) => api.runtime.sendMessage(outgoing),
     openTab: (url) => void api.tabs.create({ url }),
   });
-  controller.bind(createPanelView({ callbacks: controller.callbacks, container, site: controller.site }));
+  // The running build, so a panel that did not pick up a rebuild says so itself.
+  const version = api.runtime.getManifest().version;
+  controller.bind(createPanelView({ callbacks: controller.callbacks, container, site: controller.site, version }));
 
   api.runtime.onMessage.addListener((incoming: unknown) => {
     controller.handle(incoming);

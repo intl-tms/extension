@@ -230,7 +230,7 @@ describe("commands: saving", () => {
   it("CM28 saving a Hidden translation sends hidden-changed with its new value", async () => {
     const page = boot({ html: `<button id="b" aria-label="${mark("Luk", "a.close")}">x</button>`, lang: "da" });
     await page.on();
-    page.command("open-hidden", { id: page.last("hidden-changed")!.payload.items![0]!.id });
+    page.command("open-marker", { id: page.last("hidden-changed")!.payload.items![0]!.id });
     await settle();
     page.command("save", { key: "a.close", values: { da: { value: "Luk nu" } } });
     await settle();

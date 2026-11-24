@@ -1,7 +1,7 @@
 import { isHttpUrl } from "@intl-tms/core/tools";
 import type { HiddenItem, PanelConfig, PanelWrite, PersistOutcome } from "@intl-tms/core/tools";
 import type { Usage, ValuesEnvelope } from "@intl-tms/core";
-import { dispatch, message, parseFor, type Kind, type Message, type Payloads } from "../shared/protocol.js";
+import { dispatch, message, parseFor, type Kind, type Message, type PageMarker, type Payloads } from "../shared/protocol.js";
 import { readSignInStatus, type SignInStatus } from "../shared/sign-in.js";
 
 /** The panel view's inbound calls, which mirror the Core panel store's one to one. */
@@ -11,6 +11,8 @@ export interface PanelDriver {
   setUsage(key: string, usages: Usage[], error: boolean): void;
   setConfig(config: PanelConfig): void;
   setHidden(items: HiddenItem[]): void;
+  /** Everything the page's last scan found, and the address it was found on. */
+  setMarkers(items: PageMarker[], url: string | undefined): void;
   /** What the website last said about letting the Editor in, validated. */
   setSignIn(status: SignInStatus | undefined): void;
 }
@@ -21,10 +23,10 @@ export interface PanelCallbacks {
   save(key: string, writes: Record<string, PanelWrite>): Promise<PersistOutcome | undefined>;
   /** Goes to a "Used on" address. */
   navigate(url: string): void;
-  /** Flashes a Hidden item on the page. */
+  /** Finds a Marker on the page: flashes a Hidden one, brings a visible one into view. */
   flash(id: string): void;
-  /** Opens a Hidden item for editing, as if it had been clicked on the page. */
-  openHidden(id: string): void;
+  /** Opens a Marker for editing, as if it had been clicked on the page. */
+  openMarker(id: string): void;
 }
 
 /** What the controller needs from the browser. */
@@ -56,8 +58,10 @@ export function createController(ports: ControllerPorts): Controller {
   /** The tab the shown Selection was clicked in: where its save and navigation go. */
   let selectionTab: number | undefined;
   let selectionSite: string | undefined;
-  /** The tab that produced the shown Hidden list: where flash and open go. */
+  /** The tab that produced the shown Hidden list. */
   let hiddenTab: number | undefined;
+  /** The tab that produced the shown Page list: where flash and open go, in preference to the Hidden one's. */
+  let markersTab: number | undefined;
 
   function send<K extends Kind>(kind: K, payload: Payloads[K], tab: number | undefined): Promise<unknown> {
     try {
@@ -100,6 +104,10 @@ export function createController(ports: ControllerPorts): Controller {
             hiddenTab = tab;
             target.setHidden(payload.items ?? []);
           },
+          "page-markers": ({ payload, tab }) => {
+            markersTab = tab;
+            target.setMarkers(payload.items ?? [], payload.url);
+          },
           "sign-in-changed": ({ payload, tab }) => {
             // The panel speaks for the tab whose translation it shows.
             if (selectionTab !== undefined && tab !== selectionTab) return;
@@ -141,8 +149,8 @@ export function createController(ports: ControllerPorts): Controller {
         if (selectionSite !== undefined && new URL(url).origin !== selectionSite) ports.openTab(url);
         else fire("navigate", { url }, selectionTab);
       },
-      flash: (id) => fire("flash", { id }, hiddenTab),
-      openHidden: (id) => fire("open-hidden", { id }, hiddenTab),
+      flash: (id) => fire("flash", { id }, markersTab ?? hiddenTab),
+      openMarker: (id) => fire("open-marker", { id }, markersTab ?? hiddenTab),
     },
 
     site: () => selectionSite,

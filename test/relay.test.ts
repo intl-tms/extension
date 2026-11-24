@@ -8,6 +8,7 @@ import { SITE_A, SITE_B, memoryStore, noUnhandledRejections, page, panel, world 
 const VALUES = { locales: { en: { value: "Deploy now" } } };
 const USAGES = [{ key: "hero.title", source: "runtime" as const, url: `${SITE_A}/pricing`, count: 1, lastSeen: "2026-01-01T00:00:00.000Z" }];
 const ITEMS = [{ id: "a1:aria-label", attribute: "aria-label", key: "icon.close", value: "Close" }];
+const MARKERS = [{ id: "t1", key: "hero.title", value: "Deploy now" }, ...ITEMS];
 const seed = (reply: unknown) => reply as PanelSeed | null;
 
 describe("relay: a selection is opened", () => {
@@ -223,6 +224,26 @@ describe("relay: configuration and the Hidden list", () => {
     expect(w.session.data.get(STORAGE.stash)).toMatchObject({ hiddenTab: 7, tabs: { 7: { hidden: ITEMS } } });
   });
 
+  it("relays the page's inventory with its address", async () => {
+    const w = world();
+    await w.deliver("page-markers", { url: `${SITE_A}/checkout`, items: MARKERS }, page(9));
+    expect(w.pushedOf("page-markers").map(({ payload, tab }) => ({ payload, tab }))).toEqual([
+      { payload: { url: `${SITE_A}/checkout`, items: MARKERS }, tab: 9 },
+    ]);
+  });
+
+  it("relays an inventory with no items member as an empty list", async () => {
+    const w = world();
+    await w.deliver("page-markers", {}, page(7));
+    expect(w.pushedOf("page-markers")[0]?.payload).toEqual({ items: [] });
+  });
+
+  it("writes the inventory to the session store", async () => {
+    const w = world();
+    await w.deliver("page-markers", { url: `${SITE_A}/checkout`, items: MARKERS }, page(7));
+    expect(w.session.data.get(STORAGE.stash)).toMatchObject({ markersTab: 7, tabs: { 7: { markers: MARKERS, markersUrl: `${SITE_A}/checkout` } } });
+  });
+
   it("stashes a page's status without relaying it", async () => {
     const w = world();
     await w.deliver("status-changed", { status: { site: SITE_A, gate: "on", toggle: "set", config: "loaded", protocol: "compatible" } }, page(7));
@@ -277,6 +298,22 @@ describe("relay: panel-ready", () => {
     w.pushed.length = 0;
     await w.deliver("panel-ready", {}, panel);
     expect(w.pushedOf("hidden-changed")).toEqual([]);
+  });
+
+  it("pushes a non-empty inventory", async () => {
+    const w = world();
+    await w.deliver("page-markers", { url: `${SITE_A}/checkout`, items: MARKERS }, page(7));
+    w.pushed.length = 0;
+    await w.deliver("panel-ready", {}, panel);
+    expect(w.pushedOf("page-markers")[0]?.payload).toEqual({ url: `${SITE_A}/checkout`, items: MARKERS });
+  });
+
+  it("pushes nothing for an empty inventory", async () => {
+    const w = world();
+    await w.deliver("page-markers", { items: [] }, page(7));
+    w.pushed.length = 0;
+    await w.deliver("panel-ready", {}, panel);
+    expect(w.pushedOf("page-markers")).toEqual([]);
   });
 
   it("RL26 reports a reply pending", async () => {
@@ -375,7 +412,7 @@ describe("relay: save", () => {
   });
 });
 
-describe("relay: navigate, flash and open-hidden", () => {
+describe("relay: navigate, flash and open-marker", () => {
   it("RL34 forwards navigate to the Selection's tab", async () => {
     const w = world();
     await w.select(7);
@@ -396,11 +433,26 @@ describe("relay: navigate, flash and open-hidden", () => {
     expect(w.toTabs).toEqual([{ tab: 7, message: { to: "page", kind: "flash", payload: { id: "a1:aria-label" } } }]);
   });
 
-  it("RL37 forwards open-hidden to the tab that produced the Hidden list", async () => {
+  it("RL37 forwards open-marker to the tab that produced the Hidden list", async () => {
     const w = world();
     await w.deliver("hidden-changed", { items: ITEMS }, page(7));
-    await w.deliver("open-hidden", { id: "a1:aria-label" }, panel);
-    expect(w.toTabs).toEqual([{ tab: 7, message: { to: "page", kind: "open-hidden", payload: { id: "a1:aria-label" } } }]);
+    await w.deliver("open-marker", { id: "a1:aria-label" }, panel);
+    expect(w.toTabs).toEqual([{ tab: 7, message: { to: "page", kind: "open-marker", payload: { id: "a1:aria-label" } } }]);
+  });
+
+  it("forwards flash to the tab that produced the Page list, over the Hidden one's", async () => {
+    const w = world();
+    await w.deliver("hidden-changed", { items: ITEMS }, page(7));
+    await w.deliver("page-markers", { items: MARKERS }, page(8, SITE_B));
+    await w.deliver("flash", { id: "t1" }, panel);
+    expect(w.toTabs.map((sent) => sent.tab)).toEqual([8]);
+  });
+
+  it("forwards open-marker for a visible translation to the Page list's tab", async () => {
+    const w = world();
+    await w.deliver("page-markers", { items: MARKERS }, page(7));
+    await w.deliver("open-marker", { id: "t1" }, panel);
+    expect(w.toTabs).toEqual([{ tab: 7, message: { to: "page", kind: "open-marker", payload: { id: "t1" } } }]);
   });
 
   it("RL38 flash goes to the Hidden list's tab, not the Selection's", async () => {
@@ -474,7 +526,7 @@ describe("relay: tabs that go away", () => {
     await w.select(7);
     w.relay.tabClosed(7);
     await w.deliver("panel-ready", {}, panel);
-    expect(w.session.data.get(STORAGE.stash)).toEqual({ tabs: {}, selectionTab: null, hiddenTab: null });
+    expect(w.session.data.get(STORAGE.stash)).toEqual({ tabs: {}, selectionTab: null, hiddenTab: null, markersTab: null });
   });
 
   it("XT4 a tab that navigates to another Site loses its stash", async () => {

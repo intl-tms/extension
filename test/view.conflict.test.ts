@@ -75,8 +75,8 @@ describe("panel view: a Write conflict", () => {
     expect((await conflict()).status().textContent).toBe("en ⚠ changed elsewhere");
   });
 
-  it("VC7 Diagnostics stays closed", async () => {
-    expect((await conflict()).diagnostics().open).toBe(false);
+  it("VC7 the Log tab stays unmarked", async () => {
+    expect((await conflict()).tab("log").dataset.flagged).toBe("false");
   });
 
   it("VC8 the log records a refusal, not a failure", async () => {

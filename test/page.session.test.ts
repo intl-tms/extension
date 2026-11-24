@@ -176,19 +176,19 @@ describe("hosting the session", () => {
     expect(page.of("hidden-changed")).toHaveLength(1);
   });
 
-  it("PH18 open-hidden with a listed item's reference opens that item", async () => {
+  it("PH18 open-marker with a listed item's reference opens that item", async () => {
     const page = boot({ html: HIDDEN, lang: "da" });
     await page.on();
-    page.command("open-hidden", { id: page.last("hidden-changed")!.payload.items![0]!.id });
+    page.command("open-marker", { id: page.last("hidden-changed")!.payload.items![0]!.id });
     expect(page.last("selection-opened")?.payload.key).toBe("a.close");
   });
 
-  it("PH19 open-hidden works for an item added after edit mode came on", async () => {
+  it("PH19 open-marker works for an item added after edit mode came on", async () => {
     const page = boot({ html: TEXT, lang: "da" });
     await page.on();
     document.body.insertAdjacentHTML("beforeend", HIDDEN);
     await rescan();
-    page.command("open-hidden", { id: page.last("hidden-changed")!.payload.items![0]!.id });
+    page.command("open-marker", { id: page.last("hidden-changed")!.payload.items![0]!.id });
     expect(page.last("selection-opened")?.payload.key).toBe("a.close");
   });
 
@@ -199,10 +199,10 @@ describe("hosting the session", () => {
     expect(byId("b").hasAttribute("data-tms-hl-flash")).toBe(true);
   });
 
-  it("open-hidden with a stale reference does nothing", async () => {
+  it("open-marker with a stale reference does nothing", async () => {
     const page = boot({ html: HIDDEN });
     await page.on();
-    page.command("open-hidden", { id: "a999:aria-label" });
+    page.command("open-marker", { id: "a999:aria-label" });
     expect(page.of("selection-opened")).toEqual([]);
   });
 });

@@ -6,6 +6,7 @@ const SITE = "https://a.example";
 const VALUES = { locales: { en: { value: "Deploy now" } } };
 const USAGES = [{ key: "hero.title", source: "runtime" as const, url: `${SITE}/pricing`, count: 1, lastSeen: "2026-01-01T00:00:00.000Z" }];
 const ITEMS = [{ id: "a1:aria-label", attribute: "aria-label", key: "icon.close", value: "Close" }];
+const MARKERS = [{ id: "t1", key: "hero.title", value: "Deploy now" }, ...ITEMS];
 
 function setup(reply: (message: Message) => unknown = () => undefined) {
   const calls: unknown[][] = [];
@@ -16,6 +17,7 @@ function setup(reply: (message: Message) => unknown = () => undefined) {
     setUsage: record("setUsage"),
     setConfig: record("setConfig"),
     setHidden: record("setHidden"),
+    setMarkers: record("setMarkers"),
     setSignIn: record("setSignIn"),
   };
   const sent: Message[] = [];
@@ -96,6 +98,18 @@ describe("controller: inbound messages", () => {
     const { calls, push } = setup();
     push("hidden-changed", {});
     expect(calls).toEqual([["setHidden", []]]);
+  });
+
+  it("page-markers sets the page's inventory and the address it was found on", () => {
+    const { calls, push } = setup();
+    push("page-markers", { url: `${SITE}/checkout`, items: MARKERS });
+    expect(calls).toEqual([["setMarkers", MARKERS, `${SITE}/checkout`]]);
+  });
+
+  it("page-markers with nothing in it gives an empty list and no address", () => {
+    const { calls, push } = setup();
+    push("page-markers", {});
+    expect(calls).toEqual([["setMarkers", [], undefined]]);
   });
 
   it("CT10 a message of unknown kind is reported as not handled", () => {
@@ -262,11 +276,26 @@ describe("controller: commands", () => {
     expect(sent).toEqual([{ to: "worker", kind: "flash", payload: { id: "a1:aria-label" }, tab: 8 }]);
   });
 
-  it("open-hidden is sent for the tab that produced the Hidden list", () => {
+  it("flash is sent for the tab that produced the Page list, over the Hidden one's", () => {
     const { controller, sent, push } = setup();
     push("hidden-changed", { items: ITEMS }, { tab: 8 });
-    controller.callbacks.openHidden("a1:aria-label");
-    expect(sent).toEqual([{ to: "worker", kind: "open-hidden", payload: { id: "a1:aria-label" }, tab: 8 }]);
+    push("page-markers", { items: MARKERS }, { tab: 9 });
+    controller.callbacks.flash("t1");
+    expect(sent).toEqual([{ to: "worker", kind: "flash", payload: { id: "t1" }, tab: 9 }]);
+  });
+
+  it("open-marker is sent for the tab that produced the Page list", () => {
+    const { controller, sent, push } = setup();
+    push("page-markers", { items: MARKERS }, { tab: 9 });
+    controller.callbacks.openMarker("t1");
+    expect(sent).toEqual([{ to: "worker", kind: "open-marker", payload: { id: "t1" }, tab: 9 }]);
+  });
+
+  it("open-marker is sent for the tab that produced the Hidden list", () => {
+    const { controller, sent, push } = setup();
+    push("hidden-changed", { items: ITEMS }, { tab: 8 });
+    controller.callbacks.openMarker("a1:aria-label");
+    expect(sent).toEqual([{ to: "worker", kind: "open-marker", payload: { id: "a1:aria-label" }, tab: 8 }]);
   });
 
   it("CTL-12 a rejected fire-and-forget send leaves no unhandled rejection", async () => {

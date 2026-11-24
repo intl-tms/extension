@@ -46,7 +46,7 @@ export function panel(setup: PanelSetup = {}) {
     }
     return { ok: true, results: Object.fromEntries(Object.keys(writes).map((locale) => [locale, { ok: true, status: 200 }])) };
   });
-  const callbacks = { save, navigate: vi.fn(), flash: vi.fn(), openHidden: vi.fn() };
+  const callbacks = { save, navigate: vi.fn(), flash: vi.fn(), openMarker: vi.fn() };
   const log = createLog({ now: () => new Date(2026, 0, 10, 9, 5, 3) });
   const driver = createPanelView({ callbacks, container, log, now: () => NOW, ...setup.view });
   if (setup.config !== false) driver.setConfig(setup.config ?? CONFIG);
@@ -70,9 +70,14 @@ export function panel(setup: PanelSetup = {}) {
     await settle();
   };
   const status = () => role("status")!;
-  const diagnostics = () => role<HTMLDetailsElement>("diagnostics")!;
+  const diagnostics = () => role("diagnostics")!;
+  const tabs = () => roles<HTMLButtonElement>("tab");
+  const tab = (name: string) => tabs().find((candidate) => candidate.dataset.tab === name)!;
+  /** Which section is on screen. */
+  const current = () => tabs().find((candidate) => candidate.dataset.current === "true")?.dataset.tab;
+  const pageItems = () => roles<HTMLButtonElement>("page-item");
 
-  return { container, driver, callbacks, saves, log, role, roles, shown, rows, row, control, within, type, button, press, status, diagnostics };
+  return { container, driver, callbacks, saves, log, role, roles, shown, rows, row, control, within, type, button, press, status, diagnostics, tab, tabs, current, pageItems };
 }
 
 /** A panel with `hero.title` open on a page showing `en`, values loaded for `en` and `da`. */
@@ -85,4 +90,6 @@ export function opened(setup: PanelSetup = {}, values: Record<string, Record<str
 
 export const usage = (url: string, count = 1) => ({ key: "hero.title", source: "runtime" as const, url, count, lastSeen: "2026-01-10T11:00:00.000Z" });
 export const hiddenItem = { id: "a1:aria-label", attribute: "aria-label", key: "icon.close", value: "Close" };
+/** A translation that is the text of an element: the Page list's other kind of row. */
+export const textMarker = { id: "t1", key: "hero.title", value: "Deploy now" };
 export { PANEL };

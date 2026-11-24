@@ -17,9 +17,69 @@ const locales = (view: View) => view.rows().map((row) => row.dataset.locale);
 const hint = (view: View) => (view.shown(view.role("toolbar-hint")) ? view.role("toolbar-hint")?.textContent : undefined);
 
 describe("panel view: toolbar", () => {
-  it("VT1 a Schema with no toolbar renders none", () => {
+  it("VT1 a Schema with no toolbar renders no search and no filter", () => {
     const view = opened({ config: { ...CONFIG, schema: { fields: [STATUS] } } });
-    expect([view.role("search"), view.role("filter"), view.shown(view.role("toolbar"))]).toEqual([null, null, false]);
+    expect([view.role("search"), view.role("filter")]).toEqual([null, null]);
+  });
+
+  it("which Locales are shown is offered whatever the Schema declares", () => {
+    const view = opened({ config: { ...CONFIG, schema: { fields: [STATUS] } } });
+    expect([view.shown(view.role("picker")), view.role("picker-count")?.textContent]).toEqual([true, PANEL.languagesAll(2)]);
+  });
+
+  it("clearing a Locale hides its row and narrows the count", () => {
+    const view = withToolbar();
+    const box = view.container.querySelector<HTMLInputElement>('[data-role="picker-item"][data-locale="de"] input')!;
+    box.checked = false;
+    box.dispatchEvent(new Event("change", { bubbles: true }));
+    expect([locales(view), view.role("picker-count")?.textContent]).toEqual([["en", "da"], PANEL.languagesSome(2, 3)]);
+  });
+
+  it("None keeps the Locale the page is showing", () => {
+    const view = withToolbar();
+    const none = view.roles<HTMLButtonElement>("picker-set").find((button) => button.textContent === PANEL.languagesSetNone)!;
+    none.click();
+    expect(locales(view)).toEqual(["en"]);
+  });
+
+  it("the language list closes when the Editor clicks past it", () => {
+    const view = withToolbar();
+    const list = view.role<HTMLDetailsElement>("picker")!;
+    list.open = true;
+    view.status().dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    expect(list.open).toBe(false);
+  });
+
+  it("a click inside the language list leaves it open", () => {
+    const view = withToolbar();
+    const list = view.role<HTMLDetailsElement>("picker")!;
+    list.open = true;
+    view.role("picker-list")?.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    expect(list.open).toBe(true);
+  });
+
+  it("Escape closes the language list and gives the trigger back its focus", () => {
+    const view = withToolbar();
+    const list = view.role<HTMLDetailsElement>("picker")!;
+    list.open = true;
+    list.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect([list.open, document.activeElement]).toEqual([false, view.role("picker-trigger")]);
+  });
+
+  it("the Current Locale's box cannot be cleared", () => {
+    const view = withToolbar();
+    const box = view.container.querySelector<HTMLInputElement>('[data-role="picker-item"][data-locale="en"] input')!;
+    expect([box.checked, box.disabled]).toEqual([true, true]);
+  });
+
+  it("a chosen set survives another key opening", () => {
+    const view = withToolbar();
+    const box = view.container.querySelector<HTMLInputElement>('[data-role="picker-item"][data-locale="de"] input')!;
+    box.checked = false;
+    box.dispatchEvent(new Event("change", { bubbles: true }));
+    view.driver.open("hero.other", "en", "Other");
+    view.driver.setValues("hero.other", { locales: VALUES as never }, false);
+    expect(locales(view)).toEqual(["en", "da"]);
   });
 
   it("VT2 search enabled renders a search box", () => {

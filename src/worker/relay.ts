@@ -7,6 +7,7 @@ import {
   type ConfigSlice,
   type Kind,
   type Message,
+  type PageMarker,
   type PageStatus,
   type PanelSeed,
   type Selection,
@@ -74,6 +75,9 @@ interface TabStash {
   /** The identifier of the opening the Selection came from. */
   selectionId?: string;
   hidden?: HiddenItem[];
+  /** Everything the tab's last scan found, and where. Dropped when the stash outgrows its bound. */
+  markers?: PageMarker[];
+  markersUrl?: string;
   status?: PageStatus;
 }
 
@@ -83,6 +87,8 @@ interface Stash {
   selectionTab: number | null;
   /** The tab that most recently produced a Hidden list. */
   hiddenTab: number | null;
+  /** The tab that most recently produced a Page list. */
+  markersTab: number | null;
 }
 
 interface Slices {
@@ -95,11 +101,12 @@ const isObject = (value: unknown): value is Record<string, unknown> => typeof va
 const textOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 function readStash(stored: unknown): Stash {
-  if (!isObject(stored) || !isObject(stored.tabs)) return { tabs: {}, selectionTab: null, hiddenTab: null };
+  if (!isObject(stored) || !isObject(stored.tabs)) return { tabs: {}, selectionTab: null, hiddenTab: null, markersTab: null };
   return {
     tabs: stored.tabs as Record<string, TabStash>,
     selectionTab: typeof stored.selectionTab === "number" ? stored.selectionTab : null,
     hiddenTab: typeof stored.hiddenTab === "number" ? stored.hiddenTab : null,
+    markersTab: typeof stored.markersTab === "number" ? stored.markersTab : null,
   };
 }
 
@@ -117,7 +124,7 @@ function readSlices(stored: unknown): Slices {
  * session store every time it changes and read back once by a starting Worker.
  */
 export function createRelay(ports: RelayPorts): Relay {
-  const stash: Stash = { tabs: {}, selectionTab: null, hiddenTab: null };
+  const stash: Stash = { tabs: {}, selectionTab: null, hiddenTab: null, markersTab: null };
   /** Tabs dropped by this Worker before the restore finished: the restore must not bring them back. */
   const dropped = new Set<number>();
   let slices: Slices = { sites: {}, last: null };
@@ -139,6 +146,7 @@ export function createRelay(ports: RelayPorts): Relay {
       }
       if (stash.selectionTab === null && previous.selectionTab !== null && !dropped.has(previous.selectionTab)) stash.selectionTab = previous.selectionTab;
       if (stash.hiddenTab === null && previous.hiddenTab !== null && !dropped.has(previous.hiddenTab)) stash.hiddenTab = previous.hiddenTab;
+      if (stash.markersTab === null && previous.markersTab !== null && !dropped.has(previous.markersTab)) stash.markersTab = previous.markersTab;
     })
     .catch(() => undefined);
 
@@ -204,8 +212,12 @@ export function createRelay(ports: RelayPorts): Relay {
     delete stash.tabs[tab];
     if (stash.selectionTab === tab) stash.selectionTab = null;
     if (stash.hiddenTab === tab) stash.hiddenTab = null;
+    if (stash.markersTab === tab) stash.markersTab = null;
     persist();
   }
+
+  /** Whether a tab has published a list the panel can point at: a command by Marker identity goes nowhere else. */
+  const listed = (tab: number): boolean => stash.tabs[tab]?.hidden !== undefined || stash.tabs[tab]?.markers !== undefined;
 
   function forward(tab: number | null, outgoing: Message): void {
     if (tab === null || stash.tabs[tab] === undefined) return;
@@ -226,7 +238,7 @@ export function createRelay(ports: RelayPorts): Relay {
       return false;
     }
     if (incoming === undefined) return false;
-    const isCommand = incoming.kind === "save" || incoming.kind === "navigate" || incoming.kind === "flash" || incoming.kind === "open-hidden" || incoming.kind === "panel-ready";
+    const isCommand = incoming.kind === "save" || incoming.kind === "navigate" || incoming.kind === "flash" || incoming.kind === "open-marker" || incoming.kind === "panel-ready";
     // A Page Host can never issue a command, and an extension page never announces.
     if (isCommand !== sender.extension) return false;
 
@@ -301,6 +313,23 @@ export function createRelay(ports: RelayPorts): Relay {
             relay(changed, sender, { items });
             return false;
           },
+          "page-markers": (changed) => {
+            const items = changed.payload.items ?? [];
+            const url = changed.payload.url;
+            const entry = tabStash(sender);
+            if (entry !== undefined && sender.tab !== undefined) {
+              entry.markers = items;
+              if (url === undefined) delete entry.markersUrl;
+              else entry.markersUrl = url;
+              stash.markersTab = sender.tab;
+              // A long page's inventory is the largest thing a tab can stash, and it is
+              // re-sent by the next scan: the seed is what is given up, never the stash.
+              if (JSON.stringify(entry).length > STASH_BOUND) delete entry.markers;
+              persist();
+            }
+            relay(changed, sender, { ...(url === undefined ? {} : { url }), items });
+            return false;
+          },
           "status-changed": (changed) => {
             const entry = tabStash(sender);
             if (entry !== undefined) {
@@ -320,7 +349,7 @@ export function createRelay(ports: RelayPorts): Relay {
                 const tab = stash.selectionTab;
                 const entry = tab === null ? undefined : stash.tabs[tab];
                 const hiddenEntry = stash.hiddenTab === null ? undefined : stash.tabs[stash.hiddenTab];
-                const site = entry?.site ?? hiddenEntry?.site ?? slices.last ?? undefined;
+                const site = entry?.site ?? hiddenEntry?.site ?? (stash.markersTab === null ? undefined : stash.tabs[stash.markersTab]?.site) ?? slices.last ?? undefined;
                 const slice = site === undefined ? undefined : slices.sites[site];
                 if (slice !== undefined) push(message("panel", "config-loaded", { config: slice }, { site }));
                 const signInTab = tab ?? stash.hiddenTab;
@@ -328,6 +357,18 @@ export function createRelay(ports: RelayPorts): Relay {
                 if (signInTab !== null && signIn !== undefined) push(message("panel", "sign-in-changed", { status: signIn }, { tab: signInTab, site: stash.tabs[signInTab]?.site }));
                 if (stash.hiddenTab !== null && hiddenEntry?.hidden !== undefined && hiddenEntry.hidden.length > 0) {
                   push(message("panel", "hidden-changed", { items: hiddenEntry.hidden }, { tab: stash.hiddenTab, site: hiddenEntry.site }));
+                }
+                const markersEntry = stash.markersTab === null ? undefined : stash.tabs[stash.markersTab];
+                if (stash.markersTab !== null && markersEntry?.markers !== undefined && markersEntry.markers.length > 0) {
+                  const url = markersEntry.markersUrl;
+                  push(
+                    message(
+                      "panel",
+                      "page-markers",
+                      { ...(url === undefined ? {} : { url }), items: markersEntry.markers },
+                      { tab: stash.markersTab, site: markersEntry.site },
+                    ),
+                  );
                 }
                 const seed: PanelSeed | null =
                   tab === null || entry?.selection === undefined
@@ -361,17 +402,17 @@ export function createRelay(ports: RelayPorts): Relay {
             return false;
           },
           flash: (flash) => {
-            // To the tab that produced the Hidden list, which need not be the Selection's.
+            // To the tab that produced the list the Marker came from, which need not be the Selection's.
             afterRestore(() => {
-              const tab = flash.tab ?? stash.hiddenTab;
-              if (tab !== null && stash.tabs[tab]?.hidden !== undefined) forward(tab, message("page", "flash", flash.payload));
+              const tab = flash.tab ?? stash.markersTab ?? stash.hiddenTab;
+              if (tab !== null && listed(tab)) forward(tab, message("page", "flash", flash.payload));
             });
             return false;
           },
-          "open-hidden": (openHidden) => {
+          "open-marker": (openMarker) => {
             afterRestore(() => {
-              const tab = openHidden.tab ?? stash.hiddenTab;
-              if (tab !== null && stash.tabs[tab]?.hidden !== undefined) forward(tab, message("page", "open-hidden", openHidden.payload));
+              const tab = openMarker.tab ?? stash.markersTab ?? stash.hiddenTab;
+              if (tab !== null && listed(tab)) forward(tab, message("page", "open-marker", openMarker.payload));
             });
             return false;
           },
